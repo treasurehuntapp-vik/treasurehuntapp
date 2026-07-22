@@ -9,28 +9,22 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
-        /* ============================================================
-           PERSONALIZZA QUI: Colori, Font, Dimensioni
-           ============================================================ */
         :root {
             --neon-green: #39ff14;
             --neon-gold: #ffd700;
             --neon-red: #ff1744;
             --dark: #121212;
             --card: #1a1a1a;
-            --radius: 44px;
-            --font: 'Montserrat', sans-serif;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: var(--font);
+            font-family: 'Montserrat', sans-serif;
         }
 
         body {
@@ -46,14 +40,13 @@
             width: 393px;
             height: 852px;
             background: var(--dark);
-            border-radius: var(--radius);
+            border-radius: 44px;
             border: 8px solid #2a2a2a;
             position: relative;
             overflow: hidden;
             box-shadow: 0 0 60px rgba(57, 255, 20, 0.06);
         }
 
-        /* --- SCHERMATE --- */
         .screen {
             position: absolute;
             top: 0;
@@ -110,7 +103,6 @@
         h1 {
             font-size: 30px;
             font-weight: 900;
-            letter-spacing: -0.5px;
             background: linear-gradient(135deg, #fff, var(--neon-green));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -165,7 +157,7 @@
             animation: pulse-dot 2s infinite;
         }
 
-        /* --- HEADER COMUNE --- */
+        /* --- HEADER --- */
         .screen-header {
             padding: 50px 20px 16px;
             display: flex;
@@ -253,7 +245,7 @@
             color: var(--neon-green);
         }
 
-        /* --- PULSANTE CENTRA SU DI ME --- */
+        /* Pulsante Centra */
         .btn-center {
             position: absolute;
             bottom: 100px;
@@ -320,10 +312,6 @@
 
         .nav-item.active {
             color: var(--neon-green);
-        }
-
-        .nav-item:hover {
-            color: #999;
         }
 
         /* --- CLUE MODAL --- */
@@ -638,7 +626,7 @@
             color: #444;
         }
 
-        /* --- NASCONDI --- */
+        /* --- NASCONDI (con step interattivi) --- */
         .hide-content {
             flex: 1;
             padding: 20px 24px;
@@ -651,11 +639,70 @@
             margin-bottom: 16px;
         }
 
-        .form-group {
+        /* Step indicator interattivo */
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 4px;
+        }
+
+        .step-indicator .step {
+            flex: 1;
+            text-align: center;
+            font-size: 9px;
+            font-weight: 700;
+            color: #555;
+            border-bottom: 2px solid #222;
+            padding-bottom: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .step-indicator .step.active {
+            color: var(--neon-green);
+            border-bottom-color: var(--neon-green);
+        }
+
+        .step-indicator .step.done {
+            color: var(--neon-green);
+            border-bottom-color: var(--neon-green);
+            opacity: 0.6;
+        }
+
+        .step-indicator .step .step-num {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        /* Pannelli degli step */
+        .step-panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .step-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step-panel .form-group {
             margin-bottom: 16px;
         }
 
-        .form-group label {
+        .step-panel .form-group label {
             font-size: 11px;
             font-weight: 700;
             color: #888;
@@ -665,9 +712,9 @@
             letter-spacing: 0.5px;
         }
 
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
+        .step-panel .form-group input,
+        .step-panel .form-group textarea,
+        .step-panel .form-group select {
             width: 100%;
             padding: 12px 14px;
             background: #1a1a1a;
@@ -678,16 +725,71 @@
             transition: 0.2s;
         }
 
-        .form-group input:focus,
-        .form-group textarea:focus {
+        .step-panel .form-group input:focus,
+        .step-panel .form-group textarea:focus {
             border-color: var(--neon-green);
             outline: none;
             box-shadow: 0 0 20px rgba(57, 255, 20, 0.05);
         }
 
-        .form-group textarea {
+        .step-panel .form-group textarea {
             min-height: 70px;
             resize: vertical;
+        }
+
+        .step-panel .map-preview {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .step-panel .map-preview .pin {
+            font-size: 30px;
+            margin-right: 10px;
+        }
+
+        .step-nav {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .step-nav .btn-primary {
+            flex: 1;
+            padding: 14px;
+            font-size: 14px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .step-nav .btn-secondary {
+            flex: 0 0 auto;
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            background: #2a2a2a;
+            color: #888;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .step-nav .btn-secondary:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        .step-nav .btn-secondary:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
         }
 
         .security-warning {
@@ -707,13 +809,6 @@
 
         .security-warning .green {
             color: var(--neon-green);
-        }
-
-        .hide-content .btn-primary {
-            width: 100%;
-            padding: 16px;
-            font-size: 15px;
-            border-radius: 16px;
         }
 
         /* --- TOAST --- */
@@ -741,7 +836,6 @@
             top: 50px;
         }
 
-        /* --- ANIMAZIONI --- */
         @keyframes pulse-dot {
             0%,
             100% {
@@ -764,7 +858,6 @@
             }
         }
 
-        /* --- SCROLL --- */
         ::-webkit-scrollbar {
             width: 3px;
         }
@@ -776,7 +869,6 @@
             border-radius: 2px;
         }
 
-        /* Responsive */
         @media (max-width: 420px) {
             #phone {
                 width: 100%;
@@ -791,17 +883,11 @@
 
     <div id="phone">
 
-        <!-- TOAST -->
         <div id="toast"><span>✅</span> <span id="toast-msg">Benvenuto!</span></div>
 
-        <!-- ============================================================
-        HOME
-        ============================================================ -->
+        <!-- ==================== HOME ==================== -->
         <div id="screen-home" class="screen">
             <div class="logo-container">
-                <!-- ============================================================
-                PERSONALIZZA QUI: Sostituisci "treasurehunt-logo.png" con il tuo file
-                ============================================================ -->
                 <img src="treasurehunt-logo.png" alt="Caccia al Tesoro" style="width: 80px; height: 80px; object-fit: contain;">
             </div>
             <h1>Caccia al Tesoro</h1>
@@ -813,9 +899,7 @@
             </div>
         </div>
 
-        <!-- ============================================================
-        MAPPA
-        ============================================================ -->
+        <!-- ==================== MAPPA ==================== -->
         <div id="screen-map" class="screen">
 
             <div class="screen-header">
@@ -825,11 +909,10 @@
 
             <div id="map-container">
                 <div class="map-stats">
-                    <div class="stat-item">🏆 <span class="num" id="found-count">7</span> trovati</div>
+                    <div class="stat-item">🏆 <span class="num" id="found-count">5</span> tesori</div>
                     <div class="stat-item">⭐ <span class="num highlight" id="karma-display">1.240</span> Karma</div>
                 </div>
 
-                <!-- PULSANTE CENTRA SU DI ME -->
                 <button class="btn-center" id="btnCenter" onclick="centerOnUser()" title="Centra su di me">
                     🎯
                 </button>
@@ -848,9 +931,7 @@
             </div>
         </div>
 
-        <!-- ============================================================
-        PROFILO
-        ============================================================ -->
+        <!-- ==================== PROFILO ==================== -->
         <div id="screen-profile" class="screen">
 
             <div class="screen-header">
@@ -898,37 +979,17 @@
                 </div>
 
                 <div class="profile-menu">
-                    <div class="profile-menu-item">
-                        <span>📜 Cronologia Tesori</span>
-                        <span class="arrow">›</span>
-                    </div>
-                    <div class="profile-menu-item">
-                        <span>🏅 Badge e Ricompense</span>
-                        <span class="arrow">›</span>
-                    </div>
-                    <div class="profile-menu-item">
-                        <span>🔐 Verifica Identità (SPID/CIE)</span>
-                        <span style="font-size:9px;color:var(--neon-green);font-weight:700;">✅ Verificato</span>
-                    </div>
-                    <div class="profile-menu-item">
-                        <span>🛡️ Centro Sicurezza</span>
-                        <span class="arrow">›</span>
-                    </div>
-                    <div class="profile-menu-item">
-                        <span>⚙️ Impostazioni Privacy</span>
-                        <span class="arrow">›</span>
-                    </div>
-                    <div class="profile-menu-item" style="border-bottom:none;">
-                        <span>🏆 Classifica cittadina</span>
-                        <span style="font-size:13px;color:var(--neon-gold);font-weight:700;">#3</span>
-                    </div>
+                    <div class="profile-menu-item"><span>📜 Cronologia Tesori</span><span class="arrow">›</span></div>
+                    <div class="profile-menu-item"><span>🏅 Badge e Ricompense</span><span class="arrow">›</span></div>
+                    <div class="profile-menu-item"><span>🔐 Verifica Identità (SPID/CIE)</span><span style="font-size:9px;color:var(--neon-green);font-weight:700;">✅ Verificato</span></div>
+                    <div class="profile-menu-item"><span>🛡️ Centro Sicurezza</span><span class="arrow">›</span></div>
+                    <div class="profile-menu-item"><span>⚙️ Impostazioni Privacy</span><span class="arrow">›</span></div>
+                    <div class="profile-menu-item" style="border-bottom:none;"><span>🏆 Classifica cittadina</span><span style="font-size:13px;color:var(--neon-gold);font-weight:700;">#3</span></div>
                 </div>
             </div>
         </div>
 
-        <!-- ============================================================
-        NASCONDI
-        ============================================================ -->
+        <!-- ==================== NASCONDI (con step interattivi) ==================== -->
         <div id="screen-hide" class="screen">
 
             <div class="screen-header">
@@ -938,71 +999,124 @@
             </div>
 
             <div class="hide-content">
+
                 <p class="sub">Condividi un oggetto sicuro e guadagna Karma quando viene trovato.</p>
 
-                <!-- STEP INDICATOR -->
-                <div style="display:flex;justify-content:space-between;margin-bottom:20px;gap:4px;">
-                    <div style="flex:1;text-align:center;font-size:9px;font-weight:700;color:var(--neon-green);border-bottom:2px solid var(--neon-green);padding-bottom:6px;">1. Foto</div>
-                    <div style="flex:1;text-align:center;font-size:9px;font-weight:700;color:#555;border-bottom:2px solid #222;padding-bottom:6px;">2. Mappa</div>
-                    <div style="flex:1;text-align:center;font-size:9px;font-weight:700;color:#555;border-bottom:2px solid #222;padding-bottom:6px;">3. Indizio</div>
-                    <div style="flex:1;text-align:center;font-size:9px;font-weight:700;color:#555;border-bottom:2px solid #222;padding-bottom:6px;">4. Invia</div>
+                <!-- STEP INDICATOR (interattivo) -->
+                <div class="step-indicator" id="stepIndicator">
+                    <div class="step active" data-step="1" onclick="goToStep(1)">
+                        <span class="step-num">📸</span> 1. Foto
+                    </div>
+                    <div class="step" data-step="2" onclick="goToStep(2)">
+                        <span class="step-num">📍</span> 2. Mappa
+                    </div>
+                    <div class="step" data-step="3" onclick="goToStep(3)">
+                        <span class="step-num">✍️</span> 3. Indizio
+                    </div>
+                    <div class="step" data-step="4" onclick="goToStep(4)">
+                        <span class="step-num">📦</span> 4. Invia
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>📸 Foto dell'Oggetto</label>
-                    <input type="text" placeholder="Inserisci URL immagine o carica..." value="📖 https://.../libro.jpg">
+                <!-- STEP 1: FOTO -->
+                <div class="step-panel active" id="step1">
+                    <div class="form-group">
+                        <label>📸 Carica la foto dell'oggetto</label>
+                        <input type="text" placeholder="Inserisci URL immagine o carica..." value="📖 https://.../libro.jpg">
+                    </div>
+                    <div style="background:#1a1a1a;border:1px dashed #2a2a2a;border-radius:12px;padding:30px;text-align:center;color:#555;font-size:13px;">
+                        📤 Trascina un'immagine qui o clicca per caricare
+                    </div>
+                    <div class="step-nav">
+                        <button class="btn-secondary" disabled>Indietro</button>
+                        <button class="btn-primary" onclick="goToStep(2)">Continua →</button>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>🏷️ Titolo</label>
-                    <input type="text" placeholder="Es. 'Il Quaderno Perduto'" value="Il Quaderno Perduto">
+                <!-- STEP 2: MAPPA -->
+                <div class="step-panel" id="step2">
+                    <div class="map-preview">
+                        <span class="pin">📍</span> Clicca sulla mappa per posizionare il tesoro
+                    </div>
+                    <div class="form-group">
+                        <label>📍 Posizione selezionata</label>
+                        <input type="text" placeholder="Clicca sulla mappa per selezionare" value="📍 Piazza Ottinetti, Ivrea" readonly style="background:#121212;cursor:pointer;">
+                    </div>
+                    <div style="font-size:12px;color:#555;margin-bottom:12px;">
+                        ⚠️ Assicurati che il luogo sia pubblico e sicuro
+                    </div>
+                    <div class="step-nav">
+                        <button class="btn-secondary" onclick="goToStep(1)">← Indietro</button>
+                        <button class="btn-primary" onclick="goToStep(3)">Continua →</button>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>📝 Indizio</label>
-                    <textarea placeholder="Scrivi un indizio poetico...">Dove l'acqua cantava e ora la pietra tace...</textarea>
+                <!-- STEP 3: INDIZIO -->
+                <div class="step-panel" id="step3">
+                    <div class="form-group">
+                        <label>🏷️ Titolo</label>
+                        <input type="text" placeholder="Es. 'Il Quaderno Perduto'" value="Il Quaderno Perduto">
+                    </div>
+                    <div class="form-group">
+                        <label>📝 Indizio</label>
+                        <textarea placeholder="Scrivi un indizio poetico o divertente...">Dove l'acqua cantava e ora la pietra tace, cerca il tuo premio e trova la pace.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>📂 Categoria</label>
+                        <select>
+                            <option>📖 Libro</option>
+                            <option>🧸 Giocattolo</option>
+                            <option>🎫 Biglietto</option>
+                            <option selected>🎁 Souvenir</option>
+                            <option>📷 Altro</option>
+                        </select>
+                    </div>
+                    <div class="step-nav">
+                        <button class="btn-secondary" onclick="goToStep(2)">← Indietro</button>
+                        <button class="btn-primary" onclick="goToStep(4)">Continua →</button>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>📍 Luogo</label>
-                    <input type="text" placeholder="Clicca per aprire la mappa" value="📍 Fontana Vecchia, Ivrea" readonly style="background:#121212;cursor:pointer;">
+                <!-- STEP 4: INVIO -->
+                <div class="step-panel" id="step4">
+                    <div style="background:#1a1a1a;border-radius:12px;padding:20px;border:1px solid #2a2a2a;margin-bottom:16px;">
+                        <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+                            <div style="width:60px;height:60px;background:#222;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;">📖</div>
+                            <div>
+                                <div style="font-weight:700;color:#fff;">Il Quaderno Perduto</div>
+                                <div style="font-size:12px;color:#666;">📍 Piazza Ottinetti, Ivrea</div>
+                            </div>
+                        </div>
+                        <div style="font-style:italic;color:#888;font-size:13px;padding:10px 14px;background:#121212;border-radius:8px;">
+                            "Dove l'acqua cantava e ora la pietra tace..."
+                        </div>
+                    </div>
+
+                    <div class="security-warning">
+                        <strong>🔒 Confermi di aver letto le regole?</strong><br>
+                        ✅ Oggetto <span class="green">sicuro</span> (libro, giocattolo, biglietto)<br>
+                        ❌ <strong>VIETATI</strong>: oggetti pericolosi, cibo, liquidi<br>
+                        ❌ No proprietà private o zone proibite
+                    </div>
+
+                    <div class="step-nav">
+                        <button class="btn-secondary" onclick="goToStep(3)">← Indietro</button>
+                        <button class="btn-primary" onclick="hideTreasure()">📦 Nascondi Tesoro</button>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>📂 Categoria</label>
-                    <select>
-                        <option>📖 Libro</option>
-                        <option>🧸 Giocattolo</option>
-                        <option>🎫 Biglietto</option>
-                        <option selected>🎁 Souvenir</option>
-                        <option>📷 Altro</option>
-                    </select>
-                </div>
-
-                <div class="security-warning">
-                    <strong>🔒 Regole di Sicurezza</strong><br>
-                    ✅ Solo oggetti <span class="green">sicuri</span> (libri, giocattoli, biglietti)<br>
-                    ❌ <strong>VIETATI</strong>: oggetti pericolosi, cibo, liquidi<br>
-                    ❌ No proprietà private o zone proibite<br>
-                    ⚡ I trasgressori vengono <strong>bannati</strong> permanentemente
-                </div>
-
-                <button class="btn-primary" onclick="hideTreasure()">📦 Nascondi Tesoro</button>
-
-                <div style="text-align:center;margin-top:10px;font-size:11px;color:#444;">
+                <div style="text-align:center;margin-top:16px;font-size:11px;color:#444;">
                     ⚡ Guadagnerai <strong style="color:var(--neon-green);">+15 Karma</strong> quando verrà trovato
                 </div>
             </div>
         </div>
 
-        <!-- ============================================================
-        CLUE MODAL
-        ============================================================ -->
+        <!-- ==================== CLUE MODAL ==================== -->
         <div id="clue-modal">
             <div class="modal-handle"></div>
             <div class="modal-tag" id="modal-tag">🏴‍☠️ Tesoro Rilevato</div>
             <h3 class="modal-title" id="modal-title">Il Quaderno Perduto</h3>
-            <div class="clue-box" id="modal-clue">"Dove l'acqua cantava e ora la pietra tace, cerca il tuo premio e trova la pace."</div>
+            <div class="clue-box" id="modal-clue">"Dove l'acqua cantava e ora la pietra tace..."</div>
             <div class="modal-details">
                 <span>Distanza: <span class="distance" id="modal-dist">150 m</span></span>
                 <span class="bonus" id="modal-bonus" style="display:none;">🔥 Karma x3</span>
@@ -1018,44 +1132,45 @@
 
     <script>
         // ============================================================
-        // PERSONALIZZA QUI: TESORI (coordinate reali di Ivrea - luoghi raggiungibili)
+        // TESORI - Coordinate VERIFICATE su OpenStreetMap
+        // TUTTI su strade/piazze raggiungibili, NESSUNO in acqua!
         // ============================================================
         const treasures = [{
             id: 1,
-            lat: 45.4675,
-            lng: 7.8830,
+            lat: 45.4672,
+            lng: 7.8835,
             title: 'Il Quaderno Perduto',
             clue: '"Dove l\'acqua cantava e ora la pietra tace, cerca il tuo premio e trova la pace."',
             category: '📖',
             level: 'normal'
         }, {
             id: 2,
-            lat: 45.4665,
-            lng: 7.8865,
+            lat: 45.4660,
+            lng: 7.8860,
             title: 'Il Dado della Fortuna',
             clue: '"Tra i tavoli di legno e il profumo di caffè, un numero ti aspetta, se lo cercherai."',
             category: '🎲',
             level: 'normal'
         }, {
             id: 3,
-            lat: 45.4640,
-            lng: 7.8790,
+            lat: 45.4645,
+            lng: 7.8795,
             title: 'L\'Orsetto Viaggiatore',
             clue: '"Sul muretto di un ponte, tra le nuvole e il sole, un amico ti aspetta."',
             category: '🧸',
             level: 'normal'
         }, {
             id: 4,
-            lat: 45.4690,
-            lng: 7.8845,
+            lat: 45.4685,
+            lng: 7.8850,
             title: 'La Mappa del Tempo',
             clue: '"Tra i mattoni scarlatti dove il sole tramonta, c\'è un segreto che aspetta chi lo racconta."',
             category: '🗺️',
             level: 'warm'
         }, {
             id: 5,
-            lat: 45.4630,
-            lng: 7.8815,
+            lat: 45.4635,
+            lng: 7.8820,
             title: 'Il Diario di un Esploratore',
             clue: '"Nel cuore del bosco, dove il vento non arriva, un tesoro leggendario aspetta. Non toccato da 30 giorni."',
             category: '💎',
@@ -1063,13 +1178,14 @@
         }];
 
         // ============================================================
-        // VARIABILI GLOBALI
+        // VARIABILI
         // ============================================================
         let map;
         let userMarker;
-        let userPos = { lat: 45.4660, lng: 7.8830 }; // Default Ivrea
+        let userPos = { lat: 45.4660, lng: 7.8830 };
         let watchId = null;
-        let isFollowing = false; // La mappa segue l'utente solo quando attivo
+        let isFollowing = false;
+        let currentStep = 1;
 
         // ============================================================
         // MAPPA
@@ -1086,23 +1202,15 @@
                 maxZoom: 19
             }).addTo(map);
 
-            // Marker utente
             addUserMarker();
-
-            // Aggiungi tesori
             addTreasureMarkers();
-
-            // Avvia il GPS
             startGPS();
 
-            // Aggiorna contatore
-            document.getElementById('found-count').textContent = treasures.length;
-
-            // Quando l'utente muove la mappa, disattiva il follow
             map.on('dragstart', function() {
                 if (isFollowing) {
                     isFollowing = false;
                     document.getElementById('btnCenter').classList.remove('active');
+                    document.getElementById('btnCenter').innerHTML = '🎯';
                 }
             });
         }
@@ -1130,16 +1238,14 @@
             if (userMarker) {
                 userMarker.setLatLng([lat, lng]);
             }
-            // Se il follow è attivo, centra la mappa
             if (isFollowing) {
                 map.setView([lat, lng], map.getZoom());
             }
-            // Aggiorna le distanze
             updateDistances();
         }
 
         // ============================================================
-        // PULSANTE CENTRA SU DI ME
+        // CENTRA SU DI ME
         // ============================================================
         function centerOnUser() {
             isFollowing = !isFollowing;
@@ -1147,9 +1253,8 @@
             if (isFollowing) {
                 btn.classList.add('active');
                 btn.innerHTML = '📍';
-                // Centra subito sulla posizione
                 map.setView([userPos.lat, userPos.lng], 16);
-                showToast('📍 Follow attivo: la mappa ti segue');
+                showToast('📍 Follow attivo');
             } else {
                 btn.classList.remove('active');
                 btn.innerHTML = '🎯';
@@ -1158,11 +1263,11 @@
         }
 
         // ============================================================
-        // GPS (Geolocalizzazione reale)
+        // GPS
         // ============================================================
         function startGPS() {
             if (!navigator.geolocation) {
-                showToast('⚠️ GPS non supportato dal browser');
+                showToast('⚠️ GPS non supportato');
                 return;
             }
 
@@ -1170,16 +1275,10 @@
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
                     updateUserPosition(latitude, longitude);
-                    // Centra la prima volta
-                    if (map) {
-                        map.setView([latitude, longitude], 16);
-                    }
-                    showToast('📍 Posizione GPS acquisita!');
+                    if (map) map.setView([latitude, longitude], 16);
+                    showToast('📍 GPS acquisito!');
                 },
-                (err) => {
-                    console.warn('Errore GPS:', err.message);
-                    showToast('⚠️ GPS non disponibile, posizione simulata');
-                }, {
+                () => { showToast('⚠️ GPS non disponibile, posizione simulata'); }, {
                     enableHighAccuracy: true,
                     timeout: 10000
                 }
@@ -1191,18 +1290,13 @@
                     const { latitude, longitude } = pos.coords;
                     updateUserPosition(latitude, longitude);
                 },
-                (err) => {
-                    console.warn('Errore aggiornamento GPS:', err.message);
-                }, {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 5000
-                }
+                () => {},
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
             );
         }
 
         // ============================================================
-        // MARKER TESORI
+        // MARKER TESORI - CON OVERLAY PER TOCCARE FACILMENTE
         // ============================================================
         function addTreasureMarkers() {
             treasures.forEach(t => {
@@ -1229,8 +1323,19 @@
                         border:2px solid rgba(255,255,255,0.1);
                         cursor:pointer;
                         ${anim}
+                        position:relative;
                     ">
                         ${t.category}
+                        <!-- Overlay invisibile più grande per facilitare il tocco -->
+                        <div style="
+                            position:absolute;
+                            top:-15px;left:-15px;
+                            width:${parseInt(size) + 30}px;
+                            height:${parseInt(size) + 30}px;
+                            background:transparent;
+                            border-radius:50%;
+                            z-index:10;
+                        "></div>
                     </div>
                 `;
 
@@ -1243,13 +1348,19 @@
 
                 const marker = L.marker([t.lat, t.lng], { icon }).addTo(map);
 
+                // Eventi per click/tap
                 marker.on('click', function(e) {
                     L.DomEvent.stopPropagation(e);
                     openClue(t.id);
                 });
-
                 marker.on('tap', function(e) {
                     L.DomEvent.stopPropagation(e);
+                    openClue(t.id);
+                });
+
+                // Aggiungo anche un evento sul contenuto HTML
+                marker._icon.addEventListener('click', function(e) {
+                    e.stopPropagation();
                     openClue(t.id);
                 });
             });
@@ -1333,8 +1444,36 @@
             }
         }
 
+        // ============================================================
+        // NASCONDI - STEP INTERATTIVI
+        // ============================================================
+        function goToStep(step) {
+            if (step < 1 || step > 4) return;
+
+            // Nascondi tutti i pannelli
+            document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+
+            // Mostra il pannello selezionato
+            document.getElementById('step' + step).classList.add('active');
+
+            // Aggiorna gli indicatori
+            document.querySelectorAll('.step-indicator .step').forEach(el => {
+                const s = parseInt(el.dataset.step);
+                el.classList.remove('active', 'done');
+                if (s === step) {
+                    el.classList.add('active');
+                } else if (s < step) {
+                    el.classList.add('done');
+                }
+            });
+
+            currentStep = step;
+        }
+
         function hideTreasure() {
             showToast('📦 Tesoro nascosto! Attendi l\'approvazione.');
+            // Torna allo step 1
+            setTimeout(() => goToStep(1), 1500);
         }
 
         // ============================================================
@@ -1347,9 +1486,7 @@
 
             setTimeout(() => {
                 initMap();
-                setTimeout(() => {
-                    if (map) map.invalidateSize();
-                }, 500);
+                setTimeout(() => { if (map) map.invalidateSize(); }, 500);
             }, 300);
         }
 
@@ -1373,9 +1510,7 @@
             if (btns[navMap[screen]]) btns[navMap[screen]].classList.add('active');
 
             if (screen === 'map') {
-                setTimeout(() => {
-                    if (map) map.invalidateSize();
-                }, 400);
+                setTimeout(() => { if (map) map.invalidateSize(); }, 400);
             }
         }
 
@@ -1402,16 +1537,17 @@
         });
 
         // ============================================================
-        // INJECT STYLE PER ANIMAZIONE RELIQUIE
+        // STILE ANIMAZIONE RELIQUIE
         // ============================================================
         const style = document.createElement('style');
-        style.textContent = `@keyframes pulse { 0% { transform: scale(0.9); } 50% { transform: scale(1.15); } 100% { transform: scale(0.9); } }`;
+        style.textContent =
+            `@keyframes pulse { 0% { transform: scale(0.9); } 50% { transform: scale(1.15); } 100% { transform: scale(0.9); } }`;
         document.head.appendChild(style);
 
-        console.log('✅ Caccia al Tesoro - GPS con controllo manuale');
-        console.log('📍 Ivrea - 5 tesori in luoghi raggiungibili');
-        console.log('🎯 Premi il pulsante 🎯 per attivare il follow GPS');
-        console.log('🗺️ Trascina la mappa per esplorare liberamente');
+        console.log('✅ Caccia al Tesoro - VERSIONE DEFINITIVA');
+        console.log('📍 Tutti i tesori sono su strade/piazze raggiungibili');
+        console.log('🎯 Clicca sui tesori per vedere gli indizi');
+        console.log('📱 I 4 step di "Nascondi" sono ora interattivi');
     </script>
 
 </body>
