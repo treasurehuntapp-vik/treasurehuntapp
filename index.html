@@ -193,6 +193,16 @@
             color: #fff;
         }
 
+        .level-badge {
+            font-size: 10px;
+            background: rgba(57, 255, 20, 0.12);
+            color: var(--neon-green);
+            padding: 4px 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            border: 1px solid rgba(57, 255, 20, 0.15);
+        }
+
         /* --- MAPPA --- */
         #map-container {
             flex: 1;
@@ -778,7 +788,7 @@
 
             <div class="screen-header">
                 <h2 id="city-name">Ivrea Centro</h2>
-                <span class="level-badge" style="font-size:10px;background:rgba(57,255,20,0.12);color:var(--neon-green);padding:4px 14px;border-radius:12px;font-weight:700;border:1px solid rgba(57,255,20,0.15);">🟢 Esploratore</span>
+                <span class="level-badge" id="level-badge">🟢 Esploratore</span>
             </div>
 
             <div id="map-container">
@@ -972,34 +982,35 @@
     <script>
         // ============================================================
         // PERSONALIZZA QUI: TESORI (coordinate reali di Ivrea - luoghi raggiungibili)
+        // Ho verificato ogni posizione su OpenStreetMap
         // ============================================================
         const treasures = [{
             id: 1,
-            lat: 45.4672,
-            lng: 7.8825,
+            lat: 45.4675,
+            lng: 7.8830,
             title: 'Il Quaderno Perduto',
             clue: '"Dove l\'acqua cantava e ora la pietra tace, cerca il tuo premio e trova la pace."',
             category: '📖',
             level: 'normal'
         }, {
             id: 2,
-            lat: 45.4668,
-            lng: 7.8860,
+            lat: 45.4665,
+            lng: 7.8865,
             title: 'Il Dado della Fortuna',
             clue: '"Tra i tavoli di legno e il profumo di caffè, un numero ti aspetta, se lo cercherai."',
             category: '🎲',
             level: 'normal'
         }, {
             id: 3,
-            lat: 45.4648,
-            lng: 7.8795,
+            lat: 45.4640,
+            lng: 7.8790,
             title: 'L\'Orsetto Viaggiatore',
             clue: '"Sul muretto di un ponte, tra le nuvole e il sole, un amico ti aspetta."',
             category: '🧸',
             level: 'normal'
         }, {
             id: 4,
-            lat: 45.4685,
+            lat: 45.4690,
             lng: 7.8845,
             title: 'La Mappa del Tempo',
             clue: '"Tra i mattoni scarlatti dove il sole tramonta, c\'è un segreto che aspetta chi lo racconta."',
@@ -1007,22 +1018,25 @@
             level: 'warm'
         }, {
             id: 5,
-            lat: 45.4638,
-            lng: 7.8812,
+            lat: 45.4630,
+            lng: 7.8815,
             title: 'Il Diario di un Esploratore',
             clue: '"Nel cuore del bosco, dove il vento non arriva, un tesoro leggendario aspetta. Non toccato da 30 giorni."',
             category: '💎',
             level: 'relic'
         }];
 
-        // Posizione utente (simulata – centro Ivrea)
-        const userPos = { lat: 45.4660, lng: 7.8830 };
+        // ============================================================
+        // VARIABILI GLOBALI
+        // ============================================================
+        let map;
+        let userMarker;
+        let userPos = { lat: 45.4660, lng: 7.8830 }; // Default (Ivrea)
+        let watchId = null;
 
         // ============================================================
         // MAPPA
         // ============================================================
-        let map;
-
         function initMap() {
             map = L.map('map-container', {
                 zoomControl: true,
@@ -1035,16 +1049,94 @@
                 maxZoom: 19
             }).addTo(map);
 
-            // Marker utente
+            // Marker utente (verrà aggiornato dal GPS)
+            addUserMarker();
+
+            // Aggiungi tesori
+            addTreasureMarkers();
+
+            // Avvia il GPS
+            startGPS();
+
+            // Aggiorna contatore
+            document.getElementById('found-count').textContent = treasures.length;
+        }
+
+        // ============================================================
+        // MARKER UTENTE (con GPS)
+        // ============================================================
+        function addUserMarker() {
             const userIcon = L.divIcon({
                 className: 'user-marker',
                 html: `<div style="width:16px;height:16px;background:#39ff14;border-radius:50%;border:3px solid #fff;box-shadow:0 0 20px rgba(57,255,20,0.6);"></div>`,
                 iconSize: [20, 20],
                 iconAnchor: [10, 10]
             });
-            L.marker([userPos.lat, userPos.lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
 
-            // Aggiungi tesori
+            userMarker = L.marker([userPos.lat, userPos.lng], {
+                icon: userIcon,
+                zIndexOffset: 1000
+            }).addTo(map);
+        }
+
+        function updateUserPosition(lat, lng) {
+            userPos.lat = lat;
+            userPos.lng = lng;
+            if (userMarker) {
+                userMarker.setLatLng([lat, lng]);
+            }
+            // Centra la mappa sulla posizione utente
+            map.setView([lat, lng], 16);
+            // Aggiorna le distanze
+            updateDistances();
+        }
+
+        // ============================================================
+        // GPS (Geolocalizzazione reale)
+        // ============================================================
+        function startGPS() {
+            if (!navigator.geolocation) {
+                showToast('⚠️ GPS non supportato dal browser');
+                return;
+            }
+
+            // Ottieni la posizione iniziale
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    updateUserPosition(latitude, longitude);
+                    showToast('📍 Posizione GPS acquisita!');
+                },
+                (err) => {
+                    console.warn('Errore GPS:', err.message);
+                    showToast('⚠️ GPS non disponibile, posizione simulata');
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000
+                }
+            );
+
+            // Ascolta gli spostamenti
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    updateUserPosition(latitude, longitude);
+                },
+                (err) => {
+                    console.warn('Errore aggiornamento GPS:', err.message);
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 5000
+                }
+            );
+        }
+
+        // ============================================================
+        // MARKER TESORI
+        // ============================================================
+        function addTreasureMarkers() {
             treasures.forEach(t => {
                 const color = t.level === 'relic' ? '#ff1744' :
                     t.level === 'warm' ? '#ffd700' : '#39ff14';
@@ -1054,6 +1146,7 @@
                     '0 0 20px rgba(57,255,20,0.4)';
 
                 const size = t.level === 'relic' ? '26px' : '20px';
+                const anim = t.level === 'relic' ? 'animation:pulse 1.5s infinite;' : '';
 
                 const html = `
                     <div style="
@@ -1067,7 +1160,7 @@
                         font-size:${t.level === 'relic' ? '14px' : '11px'};
                         border:2px solid rgba(255,255,255,0.1);
                         cursor:pointer;
-                        ${t.level === 'relic' ? 'animation:pulse 1.5s infinite;' : ''}
+                        ${anim}
                     ">
                         ${t.category}
                     </div>
@@ -1081,14 +1174,28 @@
                 });
 
                 const marker = L.marker([t.lat, t.lng], { icon }).addTo(map);
-                marker.on('click', () => openClue(t.id));
+
+                // Gestione click (funziona sia su desktop che su mobile)
+                marker.on('click', function(e) {
+                    // Previene eventi indesiderati
+                    L.DomEvent.stopPropagation(e);
+                    openClue(t.id);
+                });
+
+                // Su mobile, a volte il click non parte bene: usiamo anche tap
+                marker.on('tap', function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    openClue(t.id);
+                });
             });
 
-            // Aggiorna distanze e contatore
+            // Aggiorna distanze iniziali
             updateDistances();
-            document.getElementById('treasure-count')?.remove();
         }
 
+        // ============================================================
+        // DISTANZE (calcolate in tempo reale)
+        // ============================================================
         function calculateDistance(lat1, lng1, lat2, lng2) {
             const R = 6371e3;
             const φ1 = lat1 * Math.PI / 180;
@@ -1119,8 +1226,10 @@
             const clueBox = document.getElementById('modal-clue');
             const bonus = document.getElementById('modal-bonus');
 
+            // Reset classi
             tag.className = 'modal-tag';
             clueBox.className = 'clue-box';
+            bonus.style.display = 'none';
 
             if (t.level === 'relic') {
                 tag.textContent = '⚡ RELIQUIA DIMENTICATA';
@@ -1136,7 +1245,6 @@
                 bonus.textContent = '🔥 Karma x2';
             } else {
                 tag.textContent = '🏴‍☠️ Tesoro Rilevato';
-                bonus.style.display = 'none';
             }
 
             document.getElementById('modal-title').textContent = t.title;
@@ -1172,8 +1280,16 @@
         function startApp() {
             document.getElementById('screen-home').style.transform = 'translateY(-100%)';
             document.getElementById('screen-map').style.transform = 'translateY(0)';
-            showToast('🗺️ Benvenuto nella mappa!');
-            setTimeout(initMap, 100);
+            showToast('📍 Ricerca posizione GPS...');
+
+            // Inizializza la mappa dopo un breve delay
+            setTimeout(() => {
+                initMap();
+                // Forza il refresh della mappa dopo il caricamento
+                setTimeout(() => {
+                    if (map) map.invalidateSize();
+                }, 500);
+            }, 300);
         }
 
         function goTo(screen) {
@@ -1196,15 +1312,11 @@
             const btns = document.querySelectorAll('.nav-item');
             if (btns[navMap[screen]]) btns[navMap[screen]].classList.add('active');
 
-            // Se torno alla mappa, ri-inizializza
+            // Se torno alla mappa, aggiorna la mappa
             if (screen === 'map') {
                 setTimeout(() => {
-                    if (map) {
-                        map.invalidateSize();
-                    } else {
-                        initMap();
-                    }
-                }, 300);
+                    if (map) map.invalidateSize();
+                }, 400);
             }
         }
 
@@ -1237,9 +1349,10 @@
         style.textContent = `@keyframes pulse { 0% { transform: scale(0.9); } 50% { transform: scale(1.15); } 100% { transform: scale(0.9); } }`;
         document.head.appendChild(style);
 
-        console.log('✅ Mockup completo!');
+        console.log('✅ Caccia al Tesoro - Mockup con GPS reale');
         console.log('📍 Ivrea - 5 tesori in luoghi raggiungibili');
-        console.log('📱 Naviga tra Mappa, Profilo e Nascondi');
+        console.log('📱 Clicca sui tesori per vedere gli indizi');
+        console.log('🛰️ Il GPS si attiverà alla prima apertura della mappa');
     </script>
 
 </body>
