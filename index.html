@@ -253,6 +253,38 @@
             color: var(--neon-green);
         }
 
+        /* --- PULSANTE CENTRA SU DI ME --- */
+        .btn-center {
+            position: absolute;
+            bottom: 100px;
+            right: 24px;
+            z-index: 25;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            color: #fff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .btn-center:hover {
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+        }
+
+        .btn-center.active {
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+        }
+
         /* --- BOTTOM NAV --- */
         .bottom-nav {
             position: absolute;
@@ -796,6 +828,11 @@
                     <div class="stat-item">🏆 <span class="num" id="found-count">7</span> trovati</div>
                     <div class="stat-item">⭐ <span class="num highlight" id="karma-display">1.240</span> Karma</div>
                 </div>
+
+                <!-- PULSANTE CENTRA SU DI ME -->
+                <button class="btn-center" id="btnCenter" onclick="centerOnUser()" title="Centra su di me">
+                    🎯
+                </button>
             </div>
 
             <div class="bottom-nav">
@@ -982,7 +1019,6 @@
     <script>
         // ============================================================
         // PERSONALIZZA QUI: TESORI (coordinate reali di Ivrea - luoghi raggiungibili)
-        // Ho verificato ogni posizione su OpenStreetMap
         // ============================================================
         const treasures = [{
             id: 1,
@@ -1031,8 +1067,9 @@
         // ============================================================
         let map;
         let userMarker;
-        let userPos = { lat: 45.4660, lng: 7.8830 }; // Default (Ivrea)
+        let userPos = { lat: 45.4660, lng: 7.8830 }; // Default Ivrea
         let watchId = null;
+        let isFollowing = false; // La mappa segue l'utente solo quando attivo
 
         // ============================================================
         // MAPPA
@@ -1049,7 +1086,7 @@
                 maxZoom: 19
             }).addTo(map);
 
-            // Marker utente (verrà aggiornato dal GPS)
+            // Marker utente
             addUserMarker();
 
             // Aggiungi tesori
@@ -1060,10 +1097,18 @@
 
             // Aggiorna contatore
             document.getElementById('found-count').textContent = treasures.length;
+
+            // Quando l'utente muove la mappa, disattiva il follow
+            map.on('dragstart', function() {
+                if (isFollowing) {
+                    isFollowing = false;
+                    document.getElementById('btnCenter').classList.remove('active');
+                }
+            });
         }
 
         // ============================================================
-        // MARKER UTENTE (con GPS)
+        // MARKER UTENTE
         // ============================================================
         function addUserMarker() {
             const userIcon = L.divIcon({
@@ -1085,10 +1130,31 @@
             if (userMarker) {
                 userMarker.setLatLng([lat, lng]);
             }
-            // Centra la mappa sulla posizione utente
-            map.setView([lat, lng], 16);
+            // Se il follow è attivo, centra la mappa
+            if (isFollowing) {
+                map.setView([lat, lng], map.getZoom());
+            }
             // Aggiorna le distanze
             updateDistances();
+        }
+
+        // ============================================================
+        // PULSANTE CENTRA SU DI ME
+        // ============================================================
+        function centerOnUser() {
+            isFollowing = !isFollowing;
+            const btn = document.getElementById('btnCenter');
+            if (isFollowing) {
+                btn.classList.add('active');
+                btn.innerHTML = '📍';
+                // Centra subito sulla posizione
+                map.setView([userPos.lat, userPos.lng], 16);
+                showToast('📍 Follow attivo: la mappa ti segue');
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '🎯';
+                showToast('🗺️ Esplorazione libera');
+            }
         }
 
         // ============================================================
@@ -1100,11 +1166,14 @@
                 return;
             }
 
-            // Ottieni la posizione iniziale
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
                     updateUserPosition(latitude, longitude);
+                    // Centra la prima volta
+                    if (map) {
+                        map.setView([latitude, longitude], 16);
+                    }
                     showToast('📍 Posizione GPS acquisita!');
                 },
                 (err) => {
@@ -1116,7 +1185,6 @@
                 }
             );
 
-            // Ascolta gli spostamenti
             if (watchId) navigator.geolocation.clearWatch(watchId);
             watchId = navigator.geolocation.watchPosition(
                 (pos) => {
@@ -1175,26 +1243,22 @@
 
                 const marker = L.marker([t.lat, t.lng], { icon }).addTo(map);
 
-                // Gestione click (funziona sia su desktop che su mobile)
                 marker.on('click', function(e) {
-                    // Previene eventi indesiderati
                     L.DomEvent.stopPropagation(e);
                     openClue(t.id);
                 });
 
-                // Su mobile, a volte il click non parte bene: usiamo anche tap
                 marker.on('tap', function(e) {
                     L.DomEvent.stopPropagation(e);
                     openClue(t.id);
                 });
             });
 
-            // Aggiorna distanze iniziali
             updateDistances();
         }
 
         // ============================================================
-        // DISTANZE (calcolate in tempo reale)
+        // DISTANZE
         // ============================================================
         function calculateDistance(lat1, lng1, lat2, lng2) {
             const R = 6371e3;
@@ -1226,7 +1290,6 @@
             const clueBox = document.getElementById('modal-clue');
             const bonus = document.getElementById('modal-bonus');
 
-            // Reset classi
             tag.className = 'modal-tag';
             clueBox.className = 'clue-box';
             bonus.style.display = 'none';
@@ -1282,10 +1345,8 @@
             document.getElementById('screen-map').style.transform = 'translateY(0)';
             showToast('📍 Ricerca posizione GPS...');
 
-            // Inizializza la mappa dopo un breve delay
             setTimeout(() => {
                 initMap();
-                // Forza il refresh della mappa dopo il caricamento
                 setTimeout(() => {
                     if (map) map.invalidateSize();
                 }, 500);
@@ -1306,13 +1367,11 @@
             document.getElementById(screens[screen]).style.transform = 'translateY(0)';
             closeClue();
 
-            // Aggiorna nav
             document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
             const navMap = { map: 0, profile: 2, hide: 1 };
             const btns = document.querySelectorAll('.nav-item');
             if (btns[navMap[screen]]) btns[navMap[screen]].classList.add('active');
 
-            // Se torno alla mappa, aggiorna la mappa
             if (screen === 'map') {
                 setTimeout(() => {
                     if (map) map.invalidateSize();
@@ -1349,10 +1408,10 @@
         style.textContent = `@keyframes pulse { 0% { transform: scale(0.9); } 50% { transform: scale(1.15); } 100% { transform: scale(0.9); } }`;
         document.head.appendChild(style);
 
-        console.log('✅ Caccia al Tesoro - Mockup con GPS reale');
+        console.log('✅ Caccia al Tesoro - GPS con controllo manuale');
         console.log('📍 Ivrea - 5 tesori in luoghi raggiungibili');
-        console.log('📱 Clicca sui tesori per vedere gli indizi');
-        console.log('🛰️ Il GPS si attiverà alla prima apertura della mappa');
+        console.log('🎯 Premi il pulsante 🎯 per attivare il follow GPS');
+        console.log('🗺️ Trascina la mappa per esplorare liberamente');
     </script>
 
 </body>
