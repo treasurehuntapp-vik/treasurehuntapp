@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Caccia al Tesoro</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        :root {
+            --neon-green: #39ff14;
+            --neon-gold: #ffd700;
+            --neon-red: #ff1744;
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #121212;
+            --text-secondary: #555555;
+            --border-color: #e0e0e0;
+            --card-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            --input-bg: #ffffff;
+            --input-border: #d0d0d0;
+            --nav-bg: rgba(255,255,255,0.95);
+            --shadow-color: rgba(0,0,0,0.1);
+        }
+        [data-theme="dark"] {
+            --bg-primary: #121212;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --border-color: #2a2a2a;
+            --card-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            --input-bg: #1a1a1a;
+            --input-border: #2a2a2a;
+            --nav-bg: rgba(18,18,18,0.95);
+            --shadow-color: rgba(0,0,0,0.5);
+        }
+        body { background: var(--bg-primary); color: var(--text-primary); transition: background 0.3s, color 0.3s; }
+        #phone { width: 393px; height: 852px; background: var(--bg-secondary); border-radius: 44px; border: 8px solid var(--border-color); position: relative; overflow: hidden; box-shadow: 0 0 60px rgba(57, 255, 20, 0.06); transition: background 0.3s, border-color 0.3s; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); background: var(--bg-secondary); }
+        #screen-home { z-index: 10; background: var(--bg-secondary); align-items: center; justify-content: center; }
+        #screen-map { z-index: 5; transform: translateY(100%); }
+        #screen-profile { z-index: 4; transform: translateY(100%); }
+        #screen-hide { z-index: 4; transform: translateY(100%); }
+        #screen-leaderboard { z-index: 4; transform: translateY(100%); }
+        .logo-container { width: 120px; height: 120px; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; background: transparent; border: none; box-shadow: none; }
+        .logo-container img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 30px rgba(57, 255, 20, 0.25)); }
+        h1 { font-size: 30px; font-weight: 900; background: linear-gradient(135deg, var(--text-primary), var(--neon-green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 14px; color: var(--text-secondary); margin: 8px 0 20px; text-align: center; padding: 0 30px; line-height: 1.6; }
+        .btn-primary { background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); padding: 16px 48px; border-radius: 30px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 20px rgba(57, 255, 20, 0.15); }
+        .btn-primary:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 40px rgba(57, 255, 20, 0.3); }
+        .trust-badge { display: flex; align-items: center; gap: 8px; margin-top: 16px; background: rgba(57, 255, 20, 0.05); padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(57, 255, 20, 0.08); font-size: 11px; color: var(--text-secondary); }
+        .trust-badge .dot { width: 6px; height: 6px; background: var(--neon-green); border-radius: 50%; animation: pulse-dot 2s infinite; }
+        .screen-header { padding: 50px 20px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); transition: border-color 0.3s; }
+        .screen-header h2 { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+        .screen-header .back-btn { color: var(--text-secondary); font-size: 20px; cursor: pointer; background: none; border: none; transition: 0.2s; }
+        .screen-header .back-btn:hover { color: var(--text-primary); }
+        .level-badge { font-size: 10px; background: rgba(57, 255, 20, 0.12); color: var(--neon-green); padding: 4px 14px; border-radius: 12px; font-weight: 700; border: 1px solid rgba(57, 255, 20, 0.15); }
+        .theme-toggle-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .theme-toggle-btn:hover { border-color: var(--neon-green); color: var(--neon-green); }
+        .audio-toggle-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 4px 10px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .audio-toggle-btn:hover { border-color: var(--neon-green); color: var(--neon-green); }
+        .notif-btn { position: relative; background: transparent; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; padding: 4px; transition: 0.2s; }
+        .notif-btn:hover { color: var(--neon-green); }
+        .notif-badge { display: none; position: absolute; top: -2px; right: -4px; background: #ff1744; color: #fff; font-size: 9px; font-weight: 700; border-radius: 50%; min-width: 18px; height: 18px; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid var(--bg-secondary); }
+        .notif-badge.visible { display: flex; }
+        #notifications-panel { display: none; position: absolute; top: 80px; right: 12px; left: 12px; max-height: 400px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 10px 40px var(--shadow-color); z-index: 999; overflow: hidden; flex-direction: column; }
+        #notifications-panel.open { display: flex !important; }
+        .notif-header { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .notif-header-title { font-weight: 700; color: var(--text-primary); font-size: 15px; }
+        .notif-header-actions { display: flex; gap: 8px; align-items: center; }
+        .notif-mark-all-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 4px 12px; border-radius: 8px; cursor: pointer; font-size: 10px; transition: 0.2s; }
+        .notif-mark-all-btn:hover { border-color: var(--neon-green); color: var(--neon-green); }
+        .notif-close-btn { background: transparent; border: none; color: var(--text-secondary); font-size: 18px; cursor: pointer; padding: 0 4px; }
+        .notif-close-btn:hover { color: var(--text-primary); }
+        #notifications-list { overflow-y: auto; padding: 8px 0; flex: 1; max-height: 320px; }
+        .notification-item { padding: 12px 16px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
+        .notification-item:hover { background: var(--bg-primary); }
+        .notification-item.unread { background: rgba(57, 255, 20, 0.05); border-left: 3px solid var(--neon-green); }
+        .notification-item.read { opacity: 0.6; }
+        .notif-item-title { font-weight: 700; color: var(--text-primary); font-size: 14px; }
+        .notif-item-title.unread { font-weight: 700; }
+        .notif-item-title.read { font-weight: 400; }
+        .notif-item-body { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+        .notif-item-time { color: var(--text-secondary); font-size: 10px; margin-top: 6px; }
+        .notif-empty { padding: 30px 20px; text-align: center; color: var(--text-secondary); font-size: 13px; }
+        #map-container { flex: 1; margin: 0 12px 80px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color); position: relative; background: var(--bg-primary); transition: border-color 0.3s; }
+        #map-container .leaflet-control-zoom { border: none !important; }
+        #map-container .leaflet-control-zoom a { background: var(--bg-card) !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; }
+        .map-stats { position: absolute; top: 12px; left: 12px; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(12px); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border-color); z-index: 20; font-size: 10px; color: var(--text-secondary); }
+        .map-stats .stat-item { display: flex; align-items: center; gap: 6px; }
+        .map-stats .stat-item .num { color: var(--text-primary); font-weight: 700; }
+        .map-stats .stat-item .highlight { color: var(--neon-green); }
+        .btn-center { position: absolute; bottom: 100px; right: 24px; z-index: 25; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px var(--shadow-color); }
+        .btn-center:hover { border-color: var(--neon-green); color: var(--neon-green); }
+        .btn-center.active { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 20px rgba(57, 255, 20, 0.2); }
+        #radar-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; pointer-events: none; display: none; background: rgba(0, 0, 0, 0.7); border-radius: 20px; overflow: hidden; }
+        #radar-overlay.active { display: block; }
+        #radar-canvas { width: 100%; height: 100%; display: block; }
+        .radar-distance { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #39ff14; font-size: 18px; font-weight: 700; text-shadow: 0 0 20px rgba(57, 255, 20, 0.5); z-index: 51; background: rgba(0, 0, 0, 0.6); padding: 8px 20px; border-radius: 20px; border: 1px solid rgba(57, 255, 20, 0.2); pointer-events: none; }
+        .radar-close { position: absolute; top: 20px; right: 20px; z-index: 51; background: rgba(0, 0, 0, 0.6); border: 1px solid #333; color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; pointer-events: auto; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .radar-close:hover { border-color: var(--neon-red); color: var(--neon-red); }
+        .radar-treasure-name { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 51; color: #fff; font-size: 16px; font-weight: 700; text-align: center; pointer-events: none; background: rgba(0, 0, 0, 0.5); padding: 6px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; background: var(--nav-bg); backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 10px 0 20px; border-top: 1px solid var(--border-color); z-index: 30; transition: background 0.3s, border-color 0.3s; }
+        .nav-item { color: var(--text-secondary); font-size: 9px; font-weight: 600; text-align: center; cursor: pointer; background: transparent; border: none; padding: 4px 16px; border-radius: 8px; transition: 0.2s; }
+        .nav-item .icon { font-size: 20px; display: block; margin-bottom: 2px; }
+        .nav-item.active { color: var(--neon-green); }
+        #clue-modal { position: absolute; bottom: -100%; left: 0; width: 100%; background: var(--bg-secondary); border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 24px 24px 30px; box-shadow: 0 -10px 60px var(--shadow-color); transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 40; border-top: 1px solid var(--border-color); }
+        #clue-modal.show { bottom: 0; }
+        .modal-handle { width: 40px; height: 4px; background: var(--border-color); border-radius: 2px; margin: 0 auto 16px; }
+        .modal-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--neon-green); margin-bottom: 4px; }
+        .modal-tag.relic { color: var(--neon-red); }
+        .modal-tag.warm { color: var(--neon-gold); }
+        .modal-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+        .modal-level { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+        .clue-box { background: var(--bg-card); padding: 14px 16px; border-left: 4px solid var(--neon-green); font-style: italic; color: var(--text-secondary); border-radius: 0 10px 10px 0; font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
+        .clue-box.relic { border-color: var(--neon-red); }
+        .clue-box.warm { border-color: var(--neon-gold); }
+        .modal-details { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+        .modal-details .distance { color: var(--neon-green); font-weight: 700; }
+        .modal-details .bonus { color: var(--neon-red); font-weight: 700; }
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-actions .btn-primary { flex: 1; padding: 14px; font-size: 13px; border-radius: 16px; text-align: center; border: 2px solid var(--neon-green); color: var(--neon-green); background: transparent; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .modal-actions .btn-primary:hover { background: var(--neon-green); color: #000; }
+        .modal-actions .btn-secondary { flex: 1; padding: 14px; font-size: 13px; font-weight: 600; background: var(--bg-card); color: var(--text-secondary); border: none; border-radius: 16px; cursor: pointer; transition: 0.2s; }
+        .modal-actions .btn-secondary:hover { background: var(--border-color); color: var(--text-primary); }
+        .btn-danger { width: 100%; margin-top: 12px; padding: 10px; background: rgba(255, 23, 68, 0.08); color: var(--neon-red); border: 1px solid rgba(255, 23, 68, 0.15); border-radius: 12px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-danger:hover { background: rgba(255, 23, 68, 0.15); }
+        .profile-content { flex: 1; padding: 20px 24px; overflow-y: auto; }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--neon-green); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; background: var(--bg-card); box-shadow: 0 0 30px rgba(57, 255, 20, 0.1); }
+        .profile-name { text-align: center; font-size: 20px; font-weight: 700; color: var(--text-primary); }
+        .profile-level { text-align: center; font-size: 12px; color: var(--neon-green); font-weight: 600; margin-top: 2px; }
+        .profile-verified { text-align: center; margin-top: 6px; }
+        .profile-verified .badge { background: rgba(57, 255, 20, 0.1); color: var(--neon-green); font-size: 9px; padding: 2px 12px; border-radius: 10px; font-weight: 700; border: 1px solid rgba(57, 255, 20, 0.15); }
+        .profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+        .profile-stat { background: var(--bg-card); padding: 14px; border-radius: 14px; text-align: center; border: 1px solid var(--border-color); }
+        .profile-stat .number { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+        .profile-stat .label { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+        .profile-stat .label.highlight { color: var(--neon-green); }
+        .profile-streak { background: var(--bg-card); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .profile-streak .label { font-size: 13px; color: var(--text-secondary); }
+        .profile-streak .value { font-size: 16px; font-weight: 700; color: var(--neon-gold); }
+        .profile-progress { background: var(--bg-card); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px; }
+        .profile-progress .label { font-size: 12px; color: var(--text-secondary); display: flex; justify-content: space-between; }
+        .profile-progress .bar { width: 100%; height: 6px; background: var(--border-color); border-radius: 4px; margin-top: 6px; overflow: hidden; }
+        .profile-progress .bar .fill { height: 100%; background: var(--neon-green); border-radius: 4px; width: 62%; transition: width 0.5s; }
+        .profile-menu { margin-top: 8px; }
+        .profile-menu-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-size: 14px; font-weight: 500; cursor: pointer; }
+        .profile-menu-item:hover { color: var(--text-primary); }
+        .profile-menu-item .arrow { color: var(--text-secondary); }
+        .hide-content { flex: 1; padding: 20px 24px; overflow-y: auto; }
+        .hide-content .sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+        .step-indicator { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 4px; }
+        .step-indicator .step { flex: 1; text-align: center; font-size: 9px; font-weight: 700; color: var(--text-secondary); border-bottom: 2px solid var(--border-color); padding-bottom: 6px; cursor: pointer; transition: 0.3s; }
+        .step-indicator .step.active { color: var(--neon-green); border-bottom-color: var(--neon-green); }
+        .step-indicator .step.done { color: var(--neon-green); border-bottom-color: var(--neon-green); opacity: 0.6; }
+        .step-indicator .step .step-num { display: block; font-size: 14px; margin-bottom: 2px; }
+        .step-panel { display: none; animation: fadeIn 0.3s ease; }
+        .step-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .step-panel .form-group { margin-bottom: 16px; }
+        .step-panel .form-group label { font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .step-panel .form-group input, .step-panel .form-group textarea, .step-panel .form-group select { width: 100%; padding: 12px 14px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 12px; color: var(--text-primary); font-size: 14px; transition: 0.2s; }
+        .step-panel .form-group input:focus, .step-panel .form-group textarea:focus { border-color: var(--neon-green); outline: none; box-shadow: 0 0 20px rgba(57, 255, 20, 0.05); }
+        .step-panel .form-group textarea { min-height: 70px; resize: vertical; }
+        .step-panel .map-preview { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; height: 120px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 13px; margin-bottom: 12px; }
+        .step-panel .map-preview .pin { font-size: 30px; margin-right: 10px; }
+        #hide-map-container { width: 100%; height: 200px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 12px; }
+        #hide-map-container .leaflet-control-zoom { border: none !important; }
+        #hide-map-container .leaflet-control-zoom a { background: var(--bg-card) !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; }
+        .hide-photo-preview { width: 100%; height: 150px; background: var(--bg-primary); border-radius: 12px; border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; overflow: hidden; position: relative; transition: 0.3s; }
+        .hide-photo-preview.has-image { border-color: var(--neon-green); }
+        .hide-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .hide-photo-preview .placeholder { text-align: center; padding: 10px; }
+        .hide-location-btn { flex: 1; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .hide-location-btn:hover { border-color: var(--neon-green); color: var(--neon-green); }
+        .step-nav { display: flex; gap: 10px; margin-top: 16px; }
+        .step-nav .btn-primary { flex: 1; padding: 14px; font-size: 14px; border-radius: 16px; text-align: center; }
+        .step-nav .btn-secondary { flex: 0 0 auto; padding: 14px 24px; font-size: 14px; font-weight: 600; background: var(--bg-card); color: var(--text-secondary); border: none; border-radius: 16px; cursor: pointer; transition: 0.2s; }
+        .step-nav .btn-secondary:hover { background: var(--border-color); color: var(--text-primary); }
+        .step-nav .btn-secondary:disabled { opacity: 0.3; cursor: not-allowed; }
+        .security-warning { background: rgba(255, 23, 68, 0.04); border: 1px solid rgba(255, 23, 68, 0.08); border-radius: 12px; padding: 12px 14px; margin: 16px 0; font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+        .security-warning strong { color: var(--neon-red); }
+        .security-warning .green { color: var(--neon-green); }
+        .leaderboard-filters { padding: 12px 20px; display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); }
+        .leaderboard-filters .btn-filter { flex: 1; padding: 8px 0; font-size: 12px; border-radius: 12px; text-align: center; border: 1px solid var(--border-color); color: var(--text-secondary); background: transparent; cursor: pointer; transition: 0.2s; }
+        .leaderboard-filters .btn-filter:hover { border-color: var(--text-primary); color: var(--text-primary); }
+        .leaderboard-filters .btn-filter.active { border-color: var(--neon-green); color: var(--neon-green); }
+        #leaderboard-list { flex: 1; overflow-y: auto; padding: 16px 20px; }
+        .leaderboard-item { display: flex; align-items: center; padding: 12px 16px; margin-bottom: 8px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); transition: 0.2s; }
+        .leaderboard-item:hover { border-color: var(--text-secondary); }
+        .leaderboard-item.top { border-color: var(--neon-gold); }
+        .leaderboard-rank { width: 40px; font-size: 20px; text-align: center; font-weight: 700; color: var(--text-secondary); }
+        .leaderboard-info { flex: 1; margin-left: 12px; }
+        .leaderboard-name { font-weight: 600; color: var(--text-primary); }
+        .leaderboard-level { font-size: 11px; color: var(--text-secondary); }
+        .leaderboard-karma { text-align: right; }
+        .leaderboard-karma .value { font-size: 20px; font-weight: 800; color: var(--neon-green); }
+        .leaderboard-karma .label { font-size: 10px; color: var(--text-secondary); }
+        #toast { position: absolute; top: -80px; left: 50%; transform: translateX(-50%); background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 12px 24px; border-radius: 14px; color: var(--text-primary); font-size: 13px; font-weight: 500; z-index: 50; transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 40px var(--shadow-color); display: flex; align-items: center; gap: 10px; }
+        #toast.show { top: 50px; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        @keyframes pulse { 0% { transform: scale(0.9); } 50% { transform: scale(1.15); } 100% { transform: scale(0.9); } }
+        @keyframes relicGlow { 0% { box-shadow: 0 0 30px rgba(255, 23, 68, 0.4); } 50% { box-shadow: 0 0 60px rgba(255, 23, 68, 0.9); } 100% { box-shadow: 0 0 30px rgba(255, 23, 68, 0.4); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+        @media (max-width: 420px) { #phone { width: 100%; height: 700px; border-radius: 24px; border-width: 4px; } }
+        #auth-section input { width: 100%; padding: 12px 16px; margin-bottom: 10px; border-radius: 12px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-primary); font-size: 14px; transition: border-color 0.2s; }
+        #auth-section input:focus { outline: none; border-color: var(--neon-green); }
+        #auth-section .btn-auth { flex: 1; padding: 14px; font-size: 14px; border-radius: 16px; text-align: center; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        #auth-section .btn-login { border: 2px solid var(--neon-green); color: var(--neon-green); background: transparent; }
+        #auth-section .btn-login:hover { background: var(--neon-green); color: #000; }
+        #auth-section .btn-register { background: var(--bg-card); color: var(--text-secondary); border: none; }
+        #auth-section .btn-register:hover { background: var(--border-color); color: var(--text-primary); }
+        #auth-message { font-size: 13px; text-align: center; margin-bottom: 10px; min-height: 20px; color: var(--text-secondary); }
+        #user-status { display: none; margin-top: 12px; text-align: center; font-size: 13px; color: var(--neon-green); }
+        #user-status .logout-btn { margin-left: 10px; background: none; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 4px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+        #user-status .logout-btn:hover { border-color: var(--neon-red); color: var(--neon-red); }
+        #logout-section { display: none; margin-top: 10px; }
+        #logout-section .btn-logout { background: transparent; border: 1px solid #ff1744; color: #ff1744; padding: 10px 24px; border-radius: 30px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.2s; }
+        #logout-section .btn-logout:hover { background: #ff1744; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div id="phone">
+
+        <div id="toast"><span>✅</span> <span id="toast-msg">Benvenuto!</span></div>
+
+        <!-- HOME -->
+        <div id="screen-home" class="screen">
+            <div class="logo-container">
+                <img src="/treasurehunt-logo.png" alt="Caccia al Tesoro" style="width: 120px; height: 120px; object-fit: contain; filter: drop-shadow(0 0 30px rgba(57, 255, 20, 0.3));">
+            </div>
+            <h1>Caccia al Tesoro</h1>
+            <p class="subtitle">Esplora la città. Trova gli origami. Svela il mistero.<br>Ogni tesoro nasconde una storia.</p>
+            <button class="btn-primary" onclick="startApp()">Inizia l'Avventura</button>
+            <div id="auth-section" style="margin-top: 20px; width: 100%; max-width: 320px; padding: 0 20px;">
+                <div id="auth-message"></div>
+                <input type="email" id="auth-email" placeholder="Email" autocomplete="email">
+                <input type="password" id="auth-password" placeholder="Password (min 8 caratteri)" autocomplete="current-password">
+                <input type="text" id="auth-name" placeholder="Nome (opzionale)" autocomplete="name">
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="handleLogin()" class="btn-auth btn-login">Accedi</button>
+                    <button onclick="handleRegister()" class="btn-auth btn-register">Registrati</button>
+                </div>
+                <div id="user-status">
+                    ✅ Loggato come: <span id="user-name"></span>
+                    <button onclick="handleLogout()" class="logout-btn">Logout</button>
+                </div>
+            </div>
+            <div id="logout-section">
+                <button onclick="handleLogout()" class="btn-logout">🚪 Esci</button>
+            </div>
+            <div class="trust-badge">
+                <span class="dot"></span>
+                <span>🔒 Sicurezza a 4 livelli · Community verificata</span>
+            </div>
+            <div style="margin-top: 20px; text-align: center; font-size: 11px; color: var(--text-secondary);">
+                <a href="/terms.html" style="color: var(--text-secondary); text-decoration: none;">Termini e Condizioni</a>
+                &nbsp;·&nbsp;
+                <a href="/privacy.html" style="color: var(--text-secondary); text-decoration: none;">Privacy Policy</a>
+            </div>
+        </div>
+
+        <!-- MAPPA -->
+        <div id="screen-map" class="screen">
+            <div class="screen-header">
+                <h2 id="city-name">Ivrea Centro</h2>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="audio-toggle-btn" id="audio-toggle" onclick="toggleAudio()">🔊</button>
+                    <button class="notif-btn" onclick="toggleNotifications()" title="Notifiche">
+                        🔔
+                        <span class="notif-badge" id="notification-badge">0</span>
+                    </button>
+                    <button class="theme-toggle-btn" id="theme-toggle" onclick="toggleTheme()">🌙</button>
+                    <span class="level-badge" id="level-badge">🟢 Esploratore</span>
+                </div>
+            </div>
+            <div id="map-container">
+                <div class="map-stats">
+                    <div class="stat-item">🏆 <span class="num" id="found-count">0</span> trovati</div>
+                    <div class="stat-item">⭐ <span class="num highlight" id="karma-display">0</span> Karma</div>
+                </div>
+                <button class="btn-center" id="btnCenter" onclick="centerOnUser()" title="Centra su di me">🎯</button>
+                <div id="radar-overlay">
+                    <canvas id="radar-canvas"></canvas>
+                    <div class="radar-treasure-name" id="radar-treasure-name">Tesoro</div>
+                    <div class="radar-distance" id="radar-distance">0 m</div>
+                    <button class="radar-close" onclick="closeRadar()">✕</button>
+                </div>
+                <div id="notifications-panel">
+                    <div class="notif-header">
+                        <span class="notif-header-title">🔔 Notifiche</span>
+                        <div class="notif-header-actions">
+                            <button class="notif-mark-all-btn" onclick="markAllNotificationsRead()">Segna tutte come lette</button>
+                            <button class="notif-close-btn" onclick="toggleNotifications()">✕</button>
+                        </div>
+                    </div>
+                    <div id="notifications-list">
+                        <div class="notif-empty">📭 Nessuna notifica</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-nav">
+                <button class="nav-item active" onclick="goTo('map')"><span class="icon">🗺️</span> Mappa</button>
+                <button class="nav-item" onclick="goTo('hide')"><span class="icon">📦</span> Nascondi</button>
+                <button class="nav-item" onclick="goTo('leaderboard')"><span class="icon">🏆</span> Classifica</button>
+                <button class="nav-item" onclick="goTo('profile')"><span class="icon">👤</span> Profilo</button>
+            </div>
+        </div>
+
+        <!-- PROFILO -->
+        <div id="screen-profile" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" onclick="goTo('map')">‹</button>
+                <h2>Il Mio Profilo</h2>
+                <span style="width:30px;"></span>
+            </div>
+            <div class="profile-content">
+                <div class="profile-avatar">🧑</div>
+                <div class="profile-name" id="profile-name">Utente</div>
+                <div class="profile-level" id="profile-level">🟢 Esploratore · Livello 0</div>
+                <div class="profile-verified"><span class="badge">🔒 Verificato</span></div>
+                <div class="profile-stats">
+                    <div class="profile-stat"><div class="number" id="profile-found">0</div><div class="label">Tesori Trovati</div></div>
+                    <div class="profile-stat"><div class="number highlight" id="profile-karma">0</div><div class="label">⭐ Karma</div></div>
+                    <div class="profile-stat"><div class="number" id="profile-cities">0</div><div class="label">Città Esplorate</div></div>
+                </div>
+                <div class="profile-streak"><span class="label">🔥 Giorni consecutivi</span><span class="value" id="profile-streak">0</span></div>
+                <div class="profile-progress">
+                    <div class="label"><span>Prossimo livello</span><span id="profile-progress-text">0 / 500 Karma</span></div>
+                    <div class="bar"><div class="fill" id="profile-progress-bar" style="width:0%;"></div></div>
+                </div>
+                <div class="profile-menu">
+                    <div class="profile-menu-item"><span>📜 Cronologia Tesori</span><span class="arrow">›</span></div>
+                    <div class="profile-menu-item"><span>🏅 Badge e Ricompense</span><span class="arrow">›</span></div>
+                    <div class="profile-menu-item"><span>🔐 Verifica Identità (SPID/CIE)</span><span style="font-size:9px;color:var(--neon-green);font-weight:700;">✅ Verificato</span></div>
+                    <div class="profile-menu-item"><span>🛡️ Centro Sicurezza</span><span class="arrow">›</span></div>
+                    <div class="profile-menu-item"><span>⚙️ Impostazioni Privacy</span><span class="arrow">›</span></div>
+                    <div class="profile-menu-item" style="border-bottom:none;"><span>🏆 Classifica cittadina</span><span style="font-size:13px;color:var(--neon-gold);font-weight:700;">#3</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NASCONDI -->
+        <div id="screen-hide" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" onclick="goTo('map')">‹</button>
+                <h2>Nascondi un Tesoro</h2>
+                <span style="width:30px;"></span>
+            </div>
+            <div class="hide-content">
+                <p class="sub">Condividi un oggetto sicuro e guadagna Karma quando viene trovato.</p>
+                <div class="step-indicator" id="stepIndicator">
+                    <div class="step active" data-step="1" onclick="goToStep(1)"><span class="step-num">📸</span> 1. Foto</div>
+                    <div class="step" data-step="2" onclick="goToStep(2)"><span class="step-num">📍</span> 2. Mappa</div>
+                    <div class="step" data-step="3" onclick="goToStep(3)"><span class="step-num">✍️</span> 3. Indizio</div>
+                    <div class="step" data-step="4" onclick="goToStep(4)"><span class="step-num">📦</span> 4. Invia</div>
+                </div>
+
+                <!-- STEP 1: FOTO -->
+                <div class="step-panel active" id="step1">
+                    <div class="form-group">
+                        <label>📸 Foto dell'oggetto (opzionale)</label>
+                        <div class="hide-photo-preview" id="hide-photo-preview">
+                            <span class="placeholder" id="hide-photo-placeholder">📷 Nessuna foto</span>
+                            <img id="hide-photo-image" style="display:none; width:100%; height:100%; object-fit:cover;" />
+                            <button id="hide-photo-remove" onclick="clearHidePhoto()" style="display:none; position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); border:none; color:#fff; width:28px; height:28px; border-radius:50%; font-size:14px; cursor:pointer; z-index:5;">✕</button>
+                        </div>
+                        <input type="file" id="hide-photo-input" accept="image/*" style="display:none;" />
+                        <button class="hide-location-btn" onclick="triggerFileInput()" style="width:100%; padding:12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; color:var(--text-primary); cursor:pointer; font-size:14px; transition:0.2s;">
+                            📸 Carica foto
+                        </button>
+                        <div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">
+                            Puoi caricare una foto per mostrare il tuo tesoro (opzionale)
+                        </div>
+                    </div>
+                    <div class="step-nav">
+                        <button class="btn-secondary" disabled>Indietro</button>
+                        <button class="btn-primary" onclick="saveHidePhotoAndGoToStep2()">Continua →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: MAPPA -->
+                <div class="step-panel" id="step2">
+                    <div id="hide-map-container"></div>
+                    <div style="display:flex; gap:8px; margin-bottom:12px;">
+                        <button class="hide-location-btn" onclick="getCurrentLocationForHide()">📍 Posizione attuale</button>
+                        <button class="hide-location-btn" onclick="centerHideMapOnIvrea()">🎯 Centra su Ivrea</button>
+                    </div>
+                    <div class="form-group">
+                        <label>📍 Posizione selezionata</label>
+                        <input type="text" id="hide-location-input" placeholder="Clicca sulla mappa per selezionare" value="📍 Piazza Ottinetti, Ivrea" readonly style="background:var(--bg-card);cursor:pointer;color:var(--text-primary);">
+                    </div>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+                        ⚠️ Assicurati che il luogo sia pubblico e sicuro
+                    </div>
+                    <div class="step-nav">
+                        <button class="btn-secondary" onclick="goToStep(1)">← Indietro</button>
+                        <button class="btn-primary" onclick="saveHideLocationAndGoToStep3()">Continua →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: INDIZIO -->
+                <div class="step-panel" id="step3">
+                    <div class="form-group"><label>🏷️ Titolo</label><input type="text" placeholder="Es. 'Il Quaderno Perduto'" value="Il Quaderno Perduto"></div>
+                    <div class="form-group"><label>📝 Indizio</label><textarea placeholder="Scrivi un indizio poetico...">Dove l'acqua cantava e ora la pietra tace, cerca il tuo premio e trova la pace.</textarea></div>
+                    <div class="form-group"><label>📂 Categoria</label>
+                        <select>
+                            <option>📖 Libro</option>
+                            <option>🧸 Giocattolo</option>
+                            <option>🎫 Biglietto</option>
+                            <option selected>🎁 Souvenir</option>
+                            <option>📷 Altro</option>
+                        </select>
+                    </div>
+                    <div class="step-nav"><button class="btn-secondary" onclick="goToStep(2)">← Indietro</button><button class="btn-primary" onclick="saveTreasureDataAndGoToStep4()">Continua →</button></div>
+                </div>
+
+                <!-- STEP 4: INVIO -->
+                <div class="step-panel" id="step4">
+                    <div style="background:var(--bg-card);border-radius:12px;padding:20px;border:1px solid var(--border-color);margin-bottom:16px;">
+                        <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+                            <div style="width:60px;height:60px;background:var(--bg-primary);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;">📖</div>
+                            <div>
+                                <div class="preview-title" style="font-weight:700;color:var(--text-primary);">Il Quaderno Perduto</div>
+                                <div style="font-size:12px;color:var(--text-secondary);" id="preview-address">📍 Piazza Ottinetti, Ivrea</div>
+                            </div>
+                        </div>
+                        <div class="clue-preview" style="font-style:italic;color:var(--text-secondary);font-size:13px;padding:10px 14px;background:var(--bg-primary);border-radius:8px;">"Dove l'acqua cantava e ora la pietra tace..."</div>
+                    </div>
+                    <div class="security-warning">
+                        <strong>🔒 Confermi di aver letto le regole?</strong><br>
+                        ✅ Oggetto <span class="green">sicuro</span> (libro, giocattolo, biglietto)<br>
+                        ❌ <strong>VIETATI</strong>: oggetti pericolosi, cibo, liquidi<br>
+                        ❌ No proprietà private o zone proibite
+                    </div>
+                    <div class="step-nav">
+                        <button class="btn-secondary" onclick="goToStep(3)">← Indietro</button>
+                        <button class="btn-primary" onclick="createTreasureFromForm()">📦 Nascondi Tesoro</button>
+                    </div>
+                </div>
+
+                <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--text-secondary);">
+                    ⚡ Guadagnerai <strong style="color:var(--neon-green);">+15 Karma</strong> quando verrà trovato
+                </div>
+            </div>
+        </div>
+
+        <!-- CLASSIFICA -->
+        <div id="screen-leaderboard" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" onclick="goTo('map')">‹</button>
+                <h2>🏆 Classifica Cacciatori</h2>
+                <span style="width:30px;"></span>
+            </div>
+            <div class="leaderboard-filters">
+                <button class="btn-filter active" onclick="loadLeaderboard('all')">🌍 Tutti</button>
+                <button class="btn-filter" onclick="loadLeaderboard('city')">📍 Mia Città</button>
+            </div>
+            <div id="leaderboard-list">
+                <div style="text-align:center; color:var(--text-secondary); padding:40px 0;">⏳ Caricamento classifica...</div>
+            </div>
+        </div>
+
+        <!-- CLUE MODAL -->
+        <div id="clue-modal">
+            <div class="modal-handle"></div>
+            <div class="modal-tag" id="modal-tag">🏴‍☠️ Tesoro Rilevato</div>
+            <h3 class="modal-title" id="modal-title">Il Quaderno Perduto</h3>
+            <div class="modal-level" id="modal-level">📦 Tesoro Normale · Karma: 10</div>
+            <div class="clue-box" id="modal-clue">"Dove l'acqua cantava e ora la pietra tace..."</div>
+            <div class="modal-details">
+                <span>Distanza: <span class="distance" id="modal-dist">150 m</span></span>
+                <span class="bonus" id="modal-bonus" style="display:none;">🔥 Karma x3</span>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="findTreasure()">✅ Ho Trovato!</button>
+                <button class="btn-secondary" onclick="closeClue()">Chiudi</button>
+            </div>
+            <button class="btn-danger" onclick="reportTreasure()">🚨 Segnala Pericolo</button>
+        </div>
+
+    </div>
+
+    <script src="/frontend.js"></script>
+
+    <script>
+        // ============================================================
+        // FUNZIONI DI NAVIGAZIONE E MAPPA
+        // ============================================================
+
+        let map;
+        let userMarker;
+        let userPos = { lat: 45.4660, lng: 7.8830 };
+        let watchId = null;
+        let isFollowing = false;
+
+        let radarActive = false;
+        let radarTreasure = null;
+        let radarAnimationId = null;
+        let radarDistance = 0;
+
+        // Variabili per la selezione posizione su "Nascondi"
+        let hideMap = null;
+        let hideMarker = null;
+        let selectedHideLocation = { lat: 45.4660, lng: 7.8830 };
+        let selectedHideAddress = '📍 Piazza Ottinetti, Ivrea';
+
+        // Variabili per il caricamento foto
+        let hidePhotoFile = null;
+        let hidePhotoDataUrl = null;
+
+        // ============================================================
+        // CARICAMENTO FOTO
+        // ============================================================
+
+        function triggerFileInput() {
+            const input = document.getElementById('hide-photo-input');
+            if (input) {
+                input.click();
+            }
+        }
+
+        function initHidePhoto() {
+            const input = document.getElementById('hide-photo-input');
+            if (!input) return;
+            
+            input.removeEventListener('change', handleFileSelect);
+            input.addEventListener('change', handleFileSelect);
+            console.log('📸 Input file inizializzato');
+        }
+
+        function handleFileSelect(e) {
+            console.log('📸 Evento change catturato!');
+            
+            const file = e.target.files[0];
+            if (!file) {
+                console.log('⚠️ Nessun file selezionato');
+                return;
+            }
+            
+            console.log('📸 File:', file.name, file.size, file.type);
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('❌ La foto è troppo grande (max 5MB)');
+                e.target.value = '';
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                showToast('❌ Il file deve essere un\'immagine');
+                e.target.value = '';
+                return;
+            }
+            
+            hidePhotoFile = file;
+            console.log('📸 File salvato in hidePhotoFile');
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                console.log('📸 FileReader completato');
+                hidePhotoDataUrl = event.target.result;
+                
+                const img = document.getElementById('hide-photo-image');
+                const placeholder = document.getElementById('hide-photo-placeholder');
+                const preview = document.getElementById('hide-photo-preview');
+                const removeBtn = document.getElementById('hide-photo-remove');
+                
+                if (img) {
+                    img.src = event.target.result;
+                    img.style.display = 'block';
+                }
+                if (placeholder) placeholder.style.display = 'none';
+                if (preview) preview.classList.add('has-image');
+                if (removeBtn) removeBtn.style.display = 'block';
+                
+                showToast('✅ Foto caricata!');
+                console.log('📸 Anteprima visualizzata');
+                
+                e.target.value = '';
+            };
+            reader.onerror = function() {
+                console.error('❌ Errore FileReader');
+                showToast('❌ Errore nella lettura del file');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearHidePhoto() {
+            console.log('🗑️ Rimozione foto');
+            hidePhotoFile = null;
+            hidePhotoDataUrl = null;
+            
+            const img = document.getElementById('hide-photo-image');
+            const placeholder = document.getElementById('hide-photo-placeholder');
+            const preview = document.getElementById('hide-photo-preview');
+            const removeBtn = document.getElementById('hide-photo-remove');
+            const input = document.getElementById('hide-photo-input');
+            
+            if (img) {
+                img.src = '';
+                img.style.display = 'none';
+            }
+            if (placeholder) placeholder.style.display = 'block';
+            if (preview) preview.classList.remove('has-image');
+            if (removeBtn) removeBtn.style.display = 'none';
+            if (input) input.value = '';
+            
+            showToast('🗑️ Foto rimossa');
+        }
+
+        function saveHidePhotoAndGoToStep2() {
+            console.log('📸 Verifica foto:', hidePhotoFile ? '✅ File presente' : '❌ NESSUN FILE');
+            
+            if (!hidePhotoFile) {
+                showToast('⚠️ Carica una foto dell\'oggetto');
+                return;
+            }
+            
+            if (!window.tempTreasureData) {
+                window.tempTreasureData = {};
+            }
+            window.tempTreasureData.photoFile = hidePhotoFile;
+            window.tempTreasureData.photoDataUrl = hidePhotoDataUrl;
+            
+            console.log('📸 Dati foto salvati in tempTreasureData');
+            goToStep(2);
+        }
+
+        // ============================================================
+        // SELEZIONE POSIZIONE
+        // ============================================================
+
+        function initHideMap() {
+            if (hideMap) return;
+            
+            const container = document.getElementById('hide-map-container');
+            if (!container) return;
+            
+            hideMap = L.map('hide-map-container', {
+                zoomControl: true,
+                attributionControl: false
+            }).setView([selectedHideLocation.lat, selectedHideLocation.lng], 16);
+
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const tileLayer = currentTheme === 'dark' ?
+                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+            L.tileLayer(tileLayer, {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 19
+            }).addTo(hideMap);
+
+            hideMarker = L.marker([selectedHideLocation.lat, selectedHideLocation.lng], {
+                draggable: true
+            }).addTo(hideMap);
+
+            hideMarker.on('dragend', function() {
+                const pos = hideMarker.getLatLng();
+                selectedHideLocation.lat = pos.lat;
+                selectedHideLocation.lng = pos.lng;
+                updateHideLocationDisplay(pos.lat, pos.lng);
+            });
+
+            hideMap.on('click', function(e) {
+                selectedHideLocation.lat = e.latlng.lat;
+                selectedHideLocation.lng = e.latlng.lng;
+                hideMarker.setLatLng(e.latlng);
+                updateHideLocationDisplay(e.latlng.lat, e.latlng.lng);
+            });
+
+            setTimeout(() => {
+                if (hideMap) hideMap.invalidateSize();
+            }, 500);
+        }
+
+        function getCurrentLocationForHide() {
+            if (!navigator.geolocation) {
+                showToast('⚠️ GPS non supportato');
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    selectedHideLocation.lat = latitude;
+                    selectedHideLocation.lng = longitude;
+                    if (hideMarker) {
+                        hideMarker.setLatLng([latitude, longitude]);
+                    }
+                    if (hideMap) {
+                        hideMap.setView([latitude, longitude], 16);
+                    }
+                    updateHideLocationDisplay(latitude, longitude);
+                    showToast('📍 Posizione aggiornata!');
+                },
+                () => {
+                    showToast('⚠️ Impossibile ottenere la posizione');
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        function centerHideMapOnIvrea() {
+            selectedHideLocation.lat = 45.4660;
+            selectedHideLocation.lng = 7.8830;
+            if (hideMarker) {
+                hideMarker.setLatLng([45.4660, 7.8830]);
+            }
+            if (hideMap) {
+                hideMap.setView([45.4660, 7.8830], 16);
+            }
+            updateHideLocationDisplay(45.4660, 7.8830);
+        }
+
+        function updateHideLocationDisplay(lat, lng) {
+            const input = document.getElementById('hide-location-input');
+            if (input) {
+                input.value = `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                selectedHideAddress = input.value;
+            }
+            
+            if (window.tempTreasureData) {
+                window.tempTreasureData.latitude = lat;
+                window.tempTreasureData.longitude = lng;
+                window.tempTreasureData.address = selectedHideAddress;
+            }
+            
+            updateStep4Preview();
+        }
+
+        function saveHideLocationAndGoToStep3() {
+            if (!window.tempTreasureData) {
+                window.tempTreasureData = {};
+            }
+            window.tempTreasureData.latitude = selectedHideLocation.lat;
+            window.tempTreasureData.longitude = selectedHideLocation.lng;
+            window.tempTreasureData.address = selectedHideAddress;
+            
+            updateStep4Preview();
+            goToStep(3);
+        }
+
+        // ============================================================
+        // NAVIGAZIONE
+        // ============================================================
+
+        function startApp() {
+            document.getElementById('screen-home').style.transform = 'translateY(-100%)';
+            document.getElementById('screen-map').style.transform = 'translateY(0)';
+            showToast('📍 Ricerca posizione GPS...');
+
+            setTimeout(() => {
+                initMap();
+                setTimeout(() => {
+                    if (map) {
+                        map.invalidateSize();
+                        generateStartersForUser(userPos.lat, userPos.lng);
+                        setTimeout(() => loadRealTreasures(), 1500);
+                    }
+                }, 500);
+            }, 300);
+        }
+
+        function goTo(screen) {
+            const screens = {
+                map: 'screen-map',
+                profile: 'screen-profile',
+                hide: 'screen-hide',
+                leaderboard: 'screen-leaderboard'
+            };
+
+            Object.values(screens).forEach(id => {
+                document.getElementById(id).style.transform = 'translateY(100%)';
+            });
+
+            document.getElementById(screens[screen]).style.transform = 'translateY(0)';
+            closeClue();
+
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            const navMap = { map: 0, hide: 1, leaderboard: 2, profile: 3 };
+            const btns = document.querySelectorAll('.nav-item');
+            if (btns[navMap[screen]]) btns[navMap[screen]].classList.add('active');
+
+            if (screen === 'map') {
+                setTimeout(() => { if (map) map.invalidateSize(); }, 400);
+                generateStartersForUser(userPos.lat, userPos.lng);
+                setTimeout(() => loadRealTreasures(), 1500);
+            }
+
+            if (screen === 'profile') {
+                updateProfileUI();
+            }
+
+            if (screen === 'leaderboard') {
+                loadLeaderboard(currentLeaderboardFilter || 'all');
+            }
+
+            if (screen === 'map' && radarActive) {
+                const overlay = document.getElementById('radar-overlay');
+                overlay.classList.add('active');
+            }
+        }
+
+        function goToStep(step) {
+            if (step < 1 || step > 4) return;
+
+            document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+
+            document.querySelectorAll('.step-indicator .step').forEach(el => {
+                const s = parseInt(el.dataset.step);
+                el.classList.remove('active', 'done');
+                if (s === step) el.classList.add('active');
+                else if (s < step) el.classList.add('done');
+            });
+
+            if (step === 1) {
+                setTimeout(() => initHidePhoto(), 100);
+            }
+            if (step === 2) {
+                setTimeout(() => initHideMap(), 300);
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ============================================================
+        // GENERA TESORI STARTER
+        // ============================================================
+
+        async function generateStartersForUser(lat, lng) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.log('⚠️ Utente non loggato, salto generazione starter');
+                return;
+            }
+
+            try {
+                console.log(`📍 Controllo tesori starter per posizione: ${lat}, ${lng}`);
+                const response = await fetch(
+                    `${API_URL}/treasures/starter/generate?lat=${lat}&lng=${lng}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log(`✅ ${data.message}`);
+                    if (data.data && data.data.length > 0) {
+                        console.log(`📍 Creati ${data.data.length} tesori starter`);
+                        data.data.forEach((t, i) => {
+                            console.log(`  ${i+1}. ${t.title}`);
+                        });
+                    }
+                } else {
+                    console.log(`ℹ️ ${data.message}`);
+                }
+            } catch (error) {
+                console.error('❌ Errore generazione starter:', error);
+            }
+        }
+
+        // ============================================================
+        // MAPPA
+        // ============================================================
+
+        function initMap() {
+            if (map) return;
+            map = L.map('map-container', {
+                zoomControl: true,
+                attributionControl: false
+            }).setView([userPos.lat, userPos.lng], 16);
+
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const tileLayer = currentTheme === 'dark' ?
+                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+            L.tileLayer(tileLayer, {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 19
+            }).addTo(map);
+
+            addUserMarker();
+            startGPS();
+
+            map.on('dragstart', function() {
+                if (isFollowing) {
+                    isFollowing = false;
+                    document.getElementById('btnCenter').classList.remove('active');
+                    document.getElementById('btnCenter').innerHTML = '🎯';
+                }
+            });
+
+            startRadarCheck();
+        }
+
+        function addUserMarker() {
+            const userIcon = L.divIcon({
+                className: 'user-marker',
+                html: `<div style="width:16px;height:16px;background:#39ff14;border-radius:50%;border:3px solid #fff;box-shadow:0 0 20px rgba(57,255,20,0.6);"></div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            userMarker = L.marker([userPos.lat, userPos.lng], {
+                icon: userIcon,
+                zIndexOffset: 1000
+            }).addTo(map);
+        }
+
+        function updateUserPosition(lat, lng) {
+            userPos.lat = lat;
+            userPos.lng = lng;
+            if (userMarker) {
+                userMarker.setLatLng([lat, lng]);
+            }
+            if (isFollowing) {
+                map.setView([lat, lng], map.getZoom());
+            }
+        }
+
+        function centerOnUser() {
+            isFollowing = !isFollowing;
+            const btn = document.getElementById('btnCenter');
+            if (isFollowing) {
+                btn.classList.add('active');
+                btn.innerHTML = '📍';
+                map.setView([userPos.lat, userPos.lng], 16);
+                showToast('📍 Follow attivo');
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '🎯';
+                showToast('🗺️ Esplorazione libera');
+            }
+        }
+
+        function startGPS() {
+            if (!navigator.geolocation) {
+                showToast('⚠️ GPS non supportato');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    updateUserPosition(latitude, longitude);
+                    if (map) map.setView([latitude, longitude], 16);
+                    showToast('📍 GPS acquisito!');
+                },
+                () => { showToast('⚠️ GPS non disponibile, posizione simulata'); }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000
+                }
+            );
+
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    updateUserPosition(latitude, longitude);
+                    checkRadarProximity(latitude, longitude);
+                },
+                () => {},
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+            );
+        }
+
+        // ============================================================
+        // RADAR
+        // ============================================================
+
+        function startRadarCheck() {
+            setInterval(() => {
+                if (radarActive) return;
+                checkRadarProximity(userPos.lat, userPos.lng);
+            }, 2000);
+        }
+
+        function checkRadarProximity(lat, lng) {
+            let allTreasures = [];
+
+            if (window.realTreasures && window.realTreasures.length > 0) {
+                allTreasures = window.realTreasures.map(t => ({
+                    ...t,
+                    distance: calculateDistance(lat, lng, t.latitude, t.longitude)
+                }));
+            }
+
+            if (allTreasures.length === 0) return;
+
+            let nearest = null;
+            let minDistance = Infinity;
+
+            for (const t of allTreasures) {
+                if (t.distance < minDistance) {
+                    minDistance = t.distance;
+                    nearest = t;
+                }
+            }
+
+            if (nearest && minDistance <= 40) {
+                activateRadar(nearest, minDistance);
+            } else if (radarActive) {
+                if (minDistance > 50) {
+                    closeRadar();
+                }
+            }
+        }
+
+        function activateRadar(treasure, distance) {
+            if (radarActive && radarTreasure && radarTreasure.id === treasure.id) {
+                updateRadarDistance(distance);
+                return;
+            }
+
+            radarActive = true;
+            radarTreasure = treasure;
+            radarDistance = distance;
+
+            AudioSystem.play('radarBeep');
+
+            const overlay = document.getElementById('radar-overlay');
+            overlay.classList.add('active');
+
+            document.getElementById('radar-treasure-name').textContent = treasure.title || 'Tesoro';
+
+            startRadarAnimation();
+
+            if (navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+
+            showToast(`📡 Radar attivato! ${treasure.title} a ${Math.round(distance)}m`);
+        }
+
+        function updateRadarDistance(distance) {
+            radarDistance = distance;
+            document.getElementById('radar-distance').textContent = `${Math.round(distance)} m`;
+
+            if (navigator.vibrate) {
+                const intensity = Math.max(50, 200 - (distance / 40) * 150);
+                navigator.vibrate(intensity);
+            }
+
+            if (distance < 5) {
+                document.getElementById('radar-distance').textContent = '🎯 SEI ARRIVATO!';
+                document.getElementById('radar-distance').style.color = '#ffd700';
+            } else {
+                document.getElementById('radar-distance').style.color = '#39ff14';
+            }
+        }
+
+        function startRadarAnimation() {
+            const canvas = document.getElementById('radar-canvas');
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height) / 2 - 20;
+
+            let angle = 0;
+
+            function drawRadar() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxRadius);
+                gradient.addColorStop(0, 'rgba(0, 20, 0, 0.9)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                for (let i = 1; i <= 4; i++) {
+                    const r = (maxRadius / 4) * i;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+                    ctx.strokeStyle = `rgba(57, 255, 20, ${0.1 + (0.1 * (4 - i))})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    if (i < 4) {
+                        const dist = Math.round((radarDistance / 4) * i);
+                        ctx.fillStyle = 'rgba(57, 255, 20, 0.3)';
+                        ctx.font = '10px Montserrat, sans-serif';
+                        ctx.fillText(`${dist}m`, cx + r + 5, cy + 3);
+                    }
+                }
+
+                for (let i = 0; i < 4; i++) {
+                    const a = (i * Math.PI) / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx + maxRadius * 0.85 * Math.cos(a), cy + maxRadius * 0.85 * Math.sin(a));
+                    ctx.strokeStyle = 'rgba(57, 255, 20, 0.05)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                const endX = cx + maxRadius * 0.85 * Math.cos(angle);
+                const endY = cy + maxRadius * 0.85 * Math.sin(angle);
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(endX, endY);
+                ctx.strokeStyle = 'rgba(57, 255, 20, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
+                ctx.fillStyle = '#39ff14';
+                ctx.fill();
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#39ff14';
+
+                if (radarDistance < 40) {
+                    const progress = 1 - (radarDistance / 40);
+                    const r = maxRadius * 0.7 * progress;
+                    const tx = cx + r * Math.cos(angle + 0.5);
+                    const ty = cy + r * Math.sin(angle + 0.5);
+
+                    const glow = ctx.createRadialGradient(tx, ty, 0, tx, ty, 20);
+                    glow.addColorStop(0, 'rgba(255, 215, 0, 0.9)');
+                    glow.addColorStop(0.5, 'rgba(255, 215, 0, 0.3)');
+                    glow.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(tx, ty, 20, 0, 2 * Math.PI);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(tx, ty, 6, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#ffd700';
+                    ctx.fill();
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = '#ffd700';
+                }
+
+                ctx.shadowBlur = 0;
+
+                angle += 0.03;
+
+                document.getElementById('radar-distance').textContent = `${Math.round(radarDistance)} m`;
+
+                radarAnimationId = requestAnimationFrame(drawRadar);
+            }
+
+            if (radarAnimationId) {
+                cancelAnimationFrame(radarAnimationId);
+            }
+            drawRadar();
+        }
+
+        function closeRadar() {
+            radarActive = false;
+            radarTreasure = null;
+            if (radarAnimationId) {
+                cancelAnimationFrame(radarAnimationId);
+                radarAnimationId = null;
+            }
+            document.getElementById('radar-overlay').classList.remove('active');
+            showToast('📡 Radar disattivato');
+        }
+
+        // ============================================================
+        // DISTANZE
+        // ============================================================
+
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return Math.round(R * c);
+        }
+
+        // ============================================================
+        // CLUE MODAL
+        // ============================================================
+
+        function openClue(id) {
+            window.currentTreasureId = id;
+
+            let t = null;
+
+            if (window.realTreasures) {
+                t = window.realTreasures.find(t => t.id === id);
+            }
+
+            if (!t) {
+                showToast('⚠️ Tesoro non trovato');
+                return;
+            }
+
+            AudioSystem.play('clueOpen');
+
+            const tag = document.getElementById('modal-tag');
+            const clueBox = document.getElementById('modal-clue');
+            const bonus = document.getElementById('modal-bonus');
+            const levelEl = document.getElementById('modal-level');
+
+            tag.className = 'modal-tag';
+            clueBox.className = 'clue-box';
+            bonus.style.display = 'none';
+
+            let levelText = '';
+            let karmaText = '';
+
+            if (t.level === 'relic') {
+                tag.textContent = '⚡ RELIQUIA DIMENTICATA';
+                tag.classList.add('relic');
+                clueBox.classList.add('relic');
+                bonus.style.display = 'inline';
+                bonus.textContent = '🔥 Karma x3 (+30)';
+                levelText = '⚡ Reliquia Leggendaria';
+                karmaText = 'Karma: 30';
+                AudioSystem.play('relicAlert');
+            } else if (t.level === 'warm') {
+                tag.textContent = '🔥 Tesoro "Caldo"';
+                tag.classList.add('warm');
+                clueBox.classList.add('warm');
+                bonus.style.display = 'inline';
+                bonus.textContent = '🔥 Karma x2 (+20)';
+                levelText = '🔥 Tesoro Caldo';
+                karmaText = 'Karma: 20';
+            } else {
+                tag.textContent = '🏴‍☠️ Tesoro Rilevato';
+                levelText = '📦 Tesoro Normale';
+                karmaText = 'Karma: 10';
+            }
+
+            levelEl.textContent = `${levelText} · ${karmaText}`;
+
+            document.getElementById('modal-title').textContent = t.title;
+            document.getElementById('modal-clue').textContent = `"${t.clue}"`;
+            document.getElementById('modal-dist').textContent = `${t.distance || 0} m`;
+
+            document.getElementById('clue-modal').classList.add('show');
+        }
+
+        function closeClue() {
+            document.getElementById('clue-modal').classList.remove('show');
+        }
+
+        async function findTreasure() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('⚠️ Devi essere loggato');
+                return;
+            }
+
+            const treasureId = window.currentTreasureId;
+            if (!treasureId) {
+                showToast('⚠️ Nessun tesoro selezionato');
+                return;
+            }
+
+            const user = JSON.parse(localStorage.getItem('user'));
+            const needsPhoto = ['explorer', 'hunter'].includes(user?.trust_level || 'explorer');
+
+            let photoFile = null;
+
+            if (needsPhoto) {
+                try {
+                    const file = await openFilePicker();
+                    if (!file) {
+                        showToast('❌ Devi selezionare una foto per confermare');
+                        return;
+                    }
+                    photoFile = file;
+                } catch (error) {
+                    showToast('❌ Errore nell\'apertura della fotocamera');
+                    return;
+                }
+            }
+
+            const position = await getCurrentPosition();
+            if (!position) {
+                showToast('❌ Impossibile ottenere la posizione GPS');
+                return;
+            }
+
+            const formData = new FormData();
+            if (photoFile) {
+                formData.append('photo', photoFile);
+            }
+            formData.append('lat', position.lat);
+            formData.append('lng', position.lng);
+
+            try {
+                const response = await fetch(`${API_URL}/treasures/${treasureId}/find?lat=${position.lat}&lng=${position.lng}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeClue();
+                    if (radarActive) closeRadar();
+                    AudioSystem.play('treasureFound');
+                    showToast(data.message);
+                    setTimeout(() => loadRealTreasures(), 2000);
+                } else {
+                    showToast('❌ ' + data.message);
+                }
+            } catch (error) {
+                console.error('Errore:', error);
+                showToast('❌ Errore di connessione al server');
+            }
+        }
+
+        function openFilePicker() {
+            return new Promise((resolve) => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.capture = 'environment';
+                
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    resolve(file);
+                };
+                
+                input.oncancel = () => {
+                    resolve(null);
+                };
+                
+                input.click();
+            });
+        }
+
+        function getCurrentPosition() {
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) {
+                    resolve({ lat: 45.4660, lng: 7.8830 });
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        resolve({
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude
+                        });
+                    },
+                    () => {
+                        resolve({ lat: 45.4660, lng: 7.8830 });
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+        }
+
+        function reportTreasure() {
+            if (confirm('🚨 Segnali questo tesoro come pericoloso?')) {
+                closeClue();
+                showToast('⚠️ Segnalazione inviata!');
+            }
+        }
+
+        // ============================================================
+        // SALVA DATI TESORO E VAI ALLO STEP 4
+        // ============================================================
+
+        function saveTreasureDataAndGoToStep4() {
+            const titleInput = document.querySelector('#step3 input[type="text"]');
+            const clueTextarea = document.querySelector('#step3 textarea');
+            const categorySelect = document.querySelector('#step3 select');
+
+            const title = titleInput ? titleInput.value.trim() : 'Tesoro Misterioso';
+            const clue = clueTextarea ? clueTextarea.value.trim() : 'Indizio segreto...';
+            const category = categorySelect ? categorySelect.value : 'altro';
+
+            if (!window.tempTreasureData) {
+                window.tempTreasureData = {};
+            }
+            window.tempTreasureData.title = title;
+            window.tempTreasureData.clue = clue;
+            window.tempTreasureData.category = category;
+
+            console.log('📦 Dati salvati:', window.tempTreasureData);
+
+            goToStep(4);
+            updateStep4Preview();
+        }
+
+        function updateStep4Preview() {
+            const data = window.tempTreasureData;
+            if (!data) return;
+
+            const titleEl = document.querySelector('#step4 .preview-title');
+            if (titleEl) titleEl.textContent = data.title || 'Tesoro Misterioso';
+
+            const clueEl = document.querySelector('#step4 .clue-preview');
+            if (clueEl) clueEl.textContent = `"${data.clue || 'Indizio segreto...'}"`;
+
+            const addressEl = document.getElementById('preview-address');
+            if (addressEl) {
+                addressEl.textContent = data.address || '📍 Posizione selezionata sulla mappa';
+            }
+        }
+
+        // ============================================================
+        // CREA TESORO DAL FORM
+        // ============================================================
+
+        async function createTreasureFromForm() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('⚠️ Devi essere loggato per nascondere un tesoro');
+                return;
+            }
+
+            const data = window.tempTreasureData;
+            if (!data) {
+                showToast('⚠️ Nessun dato trovato. Compila prima il form.');
+                return;
+            }
+
+            const title = data.title || 'Tesoro Misterioso';
+            const clue = data.clue || 'Indizio segreto...';
+            const category = data.category || 'altro';
+            const latitude = data.latitude || userPos.lat || 45.4660;
+            const longitude = data.longitude || userPos.lng || 7.8830;
+            const address = data.address || '📍 Posizione selezionata sulla mappa';
+            const photoUrl = data.photoDataUrl || null;
+
+            console.log('📦 Creazione tesoro con dati salvati:');
+            console.log('  Titolo:', title);
+            console.log('  Indizio:', clue);
+            console.log('  Categoria:', category);
+            console.log('  Latitudine:', latitude);
+            console.log('  Longitudine:', longitude);
+            console.log('  Indirizzo:', address);
+            console.log('  Foto:', photoUrl ? 'SI' : 'NO');
+
+            if (!title || title === '') {
+                showToast('⚠️ Inserisci un titolo per il tesoro');
+                return;
+            }
+
+            if (!clue || clue === '') {
+                showToast('⚠️ Inserisci un indizio per il tesoro');
+                return;
+            }
+
+            const success = await createTreasure(title, clue, category, latitude, longitude, address, photoUrl);
+
+            if (success) {
+                window.tempTreasureData = null;
+                hidePhotoFile = null;
+                hidePhotoDataUrl = null;
+                setTimeout(() => goToStep(1), 1500);
+                setTimeout(() => {
+                    if (map) loadRealTreasures();
+                }, 2000);
+            }
+        }
+
+        // ============================================================
+        // CLASSIFICA
+        // ============================================================
+
+        let currentLeaderboardFilter = 'all';
+
+        async function loadLeaderboard(filter = 'all') {
+            currentLeaderboardFilter = filter;
+            
+            document.querySelectorAll('.btn-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const activeBtn = filter === 'all' 
+                ? document.querySelector('.btn-filter:first-child')
+                : document.querySelector('.btn-filter:last-child');
+            
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = '<div style="text-align:center; color:var(--text-secondary); padding:40px 0;">⏳ Caricamento...</div>';
+
+            try {
+                const user = JSON.parse(localStorage.getItem('user'));
+                const city = filter === 'city' && user ? user.city : null;
+                
+                const data = await getLeaderboard(50, city);
+                
+                if (!data || data.length === 0) {
+                    list.innerHTML = `
+                        <div style="text-align:center; color:var(--text-secondary); padding:40px 0;">
+                            🏆 Nessun cacciatore trovato
+                            ${filter === 'city' ? ' nella tua città' : ''}
+                        </div>
+                    `;
+                    return;
+                }
+
+                const medals = ['🥇', '🥈', '🥉'];
+                
+                list.innerHTML = data.map((user, index) => {
+                    const medal = index < 3 ? medals[index] : `#${index + 1}`;
+                    const levelLabel = user.trust_level === 'legend' ? '👑 Leggenda' :
+                                       user.trust_level === 'master' ? '⭐ Maestro' :
+                                       user.trust_level === 'hunter' ? '🔶 Cacciatore' : '🟢 Esploratore';
+                    
+                    return `
+                        <div class="leaderboard-item ${index < 3 ? 'top' : ''}">
+                            <div class="leaderboard-rank">${medal}</div>
+                            <div class="leaderboard-info">
+                                <div class="leaderboard-name">${user.name || 'Anonimo'}</div>
+                                <div class="leaderboard-level">${levelLabel}</div>
+                            </div>
+                            <div class="leaderboard-karma">
+                                <div class="value">${user.karma}</div>
+                                <div class="label">Karma</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Errore classifica:', error);
+                list.innerHTML = '<div style="text-align:center; color:var(--neon-red); padding:40px 0;">❌ Errore nel caricamento della classifica</div>';
+            }
+        }
+
+        // ============================================================
+        // NOTIFICHE UI
+        // ============================================================
+
+        let notificationsPanelOpen = false;
+
+        async function toggleNotifications() {
+            const panel = document.getElementById('notifications-panel');
+            notificationsPanelOpen = !notificationsPanelOpen;
+            if (notificationsPanelOpen) {
+                panel.classList.add('open');
+                await loadNotifications();
+                await updateUnreadCount();
+            } else {
+                panel.classList.remove('open');
+            }
+        }
+
+        async function loadNotifications() {
+            const list = document.getElementById('notifications-list');
+            const result = await getNotifications(50, 0, false);
+            
+            if (!result || result.notifications.length === 0) {
+                list.innerHTML = `<div class="notif-empty">📭 Nessuna notifica</div>`;
+                return;
+            }
+
+            list.innerHTML = result.notifications.map(n => `
+                <div class="notification-item ${n.read ? 'read' : 'unread'}" onclick="handleNotificationClick('${n.id}')">
+                    <div class="notif-item-title ${n.read ? 'read' : 'unread'}">${n.title}</div>
+                    <div class="notif-item-body">${n.body}</div>
+                    <div class="notif-item-time">${new Date(n.created_at).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        async function handleNotificationClick(notificationId) {
+            await markNotificationRead(notificationId);
+            await loadNotifications();
+            await updateUnreadCount();
+        }
+
+        async function updateUnreadCount() {
+            const count = await getUnreadCount();
+            const badge = document.getElementById('notification-badge');
+            if (count > 0) {
+                badge.classList.add('visible');
+                badge.textContent = count > 99 ? '99+' : count;
+            } else {
+                badge.classList.remove('visible');
+            }
+        }
+
+        setInterval(updateUnreadCount, 30000);
+
+        window.toggleNotifications = toggleNotifications;
+        window.loadNotifications = loadNotifications;
+        window.handleNotificationClick = handleNotificationClick;
+        window.updateUnreadCount = updateUnreadCount;
+        window.loadLeaderboard = loadLeaderboard;
+
+        // ============================================================
+        // CARICA TESORI REALI
+        // ============================================================
+
+        async function loadRealTreasures() {
+            if (!map) {
+                console.log('⚠️ Mappa non inizializzata, riprovo tra 1 secondo...');
+                setTimeout(() => loadRealTreasures(), 1000);
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.log('⚠️ Utente non loggato');
+                return;
+            }
+
+            try {
+                const treasures = await getNearbyTreasures(userPos.lat, userPos.lng, 10000);
+
+                if (treasures && treasures.length > 0) {
+                    window.realTreasures = treasures;
+                    clearTreasureMarkers();
+
+                    treasures.forEach(t => {
+                        addRealTreasureMarker(t);
+                    });
+
+                    document.getElementById('found-count').textContent = treasures.length;
+                    console.log(`✅ Caricati ${treasures.length} tesori dal database`);
+                } else {
+                    console.log('ℹ️ Nessun tesoro trovato nelle vicinanze');
+                }
+            } catch (error) {
+                console.error('❌ Errore nel caricamento dei tesori:', error);
+            }
+        }
+
+        function addRealTreasureMarker(treasure) {
+            if (!map) {
+                console.log('⚠️ Mappa non disponibile, salto il marker');
+                return;
+            }
+
+            let color, glow, size, anim;
+
+            if (treasure.level === 'relic') {
+                color = '#ff1744';
+                glow = '0 0 40px rgba(255,23,68,0.9)';
+                size = '28px';
+                anim = 'animation:pulse 1.5s infinite, relicGlow 2s infinite alternate;';
+            } else if (treasure.level === 'warm') {
+                color = '#ffd700';
+                glow = '0 0 30px rgba(255,215,0,0.7)';
+                size = '24px';
+                anim = 'animation:pulse 2s infinite;';
+            } else {
+                color = '#39ff14';
+                glow = '0 0 20px rgba(57,255,20,0.4)';
+                size = '20px';
+                anim = '';
+            }
+
+            let icon = '📦';
+            const category = treasure.category || '';
+            if (category.includes('libro') || category === 'book' || category === '📖') icon = '📖';
+            else if (category.includes('giocattolo') || category === 'toy' || category === '🧸') icon = '🧸';
+            else if (category.includes('biglietto') || category === 'ticket' || category === '🎫') icon = '🎫';
+            else if (category.includes('souvenir') || category === '🎁') icon = '🎁';
+            else if (category.includes('altro') || category === 'other') icon = '📦';
+
+            if (treasure.category && treasure.category.match(/[\u{1F300}-\u{1FAFF}]/u)) {
+                icon = treasure.category;
+            }
+
+            const html = `
+                <div style="
+                    width:${size};height:${size};
+                    background:${color};
+                    border-radius:50%;
+                    box-shadow:${glow};
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-size:${treasure.level === 'relic' ? '14px' : '11px'};
+                    border:2px solid rgba(255,255,255,0.15);
+                    cursor:pointer;
+                    ${anim}
+                    position:relative;
+                    transition: transform 0.2s;
+                ">
+                    ${icon}
+                    <div style="
+                        position:absolute;
+                        top:-15px;left:-15px;
+                        width:${parseInt(size) + 30}px;
+                        height:${parseInt(size) + 30}px;
+                        background:transparent;
+                        border-radius:50%;
+                        z-index:10;
+                    "></div>
+                    ${treasure.level === 'relic' ? `
+                        <div style="
+                            position:absolute;
+                            top:-8px;right:-8px;
+                            font-size:12px;
+                            animation: spin 3s linear infinite;
+                        ">⚡</div>
+                    ` : ''}
+                    ${treasure.level === 'warm' ? `
+                        <div style="
+                            position:absolute;
+                            top:-8px;right:-8px;
+                            font-size:12px;
+                        ">🔥</div>
+                    ` : ''}
+                </div>
+            `;
+
+            const iconL = L.divIcon({
+                className: 'treasure-marker',
+                html: html,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+
+            const marker = L.marker([treasure.latitude, treasure.longitude], { icon: iconL }).addTo(map);
+
+            marker.on('click', function(e) {
+                L.DomEvent.stopPropagation(e);
+                openClue(treasure.id);
+            });
+            marker.on('tap', function(e) {
+                L.DomEvent.stopPropagation(e);
+                openClue(treasure.id);
+            });
+
+            if (!window.treasureMarkers) window.treasureMarkers = [];
+            window.treasureMarkers.push(marker);
+        }
+
+        function clearTreasureMarkers() {
+            if (window.treasureMarkers) {
+                window.treasureMarkers.forEach(marker => {
+                    if (map) map.removeLayer(marker);
+                });
+                window.treasureMarkers = [];
+            }
+        }
+
+        // ============================================================
+        // TEMA
+        // ============================================================
+
+        function getAutoTheme() {
+            const hour = new Date().getHours();
+            return (hour >= 20 || hour < 6) ? 'dark' : 'light';
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            const btn = document.getElementById('theme-toggle');
+            if (btn) {
+                btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+            }
+
+            if (map) {
+                map.eachLayer(layer => {
+                    if (layer instanceof L.TileLayer) {
+                        map.removeLayer(layer);
+                    }
+                });
+
+                const tileLayer = theme === 'dark' ?
+                    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+                L.tileLayer(tileLayer, {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                    maxZoom: 19
+                }).addTo(map);
+            }
+
+            if (hideMap) {
+                hideMap.eachLayer(layer => {
+                    if (layer instanceof L.TileLayer) {
+                        hideMap.removeLayer(layer);
+                    }
+                });
+                const hideTileLayer = theme === 'dark' ?
+                    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                L.tileLayer(hideTileLayer, {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                    maxZoom: 19
+                }).addTo(hideMap);
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            showToast(newTheme === 'dark' ? '🌙 Tema scuro attivato' : '☀️ Tema chiaro attivato');
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            let theme;
+
+            if (savedTheme) {
+                theme = savedTheme;
+            } else {
+                theme = getAutoTheme();
+            }
+
+            applyTheme(theme);
+
+            setInterval(() => {
+                const autoTheme = getAutoTheme();
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                if (!localStorage.getItem('theme')) {
+                    applyTheme(autoTheme);
+                }
+            }, 10 * 60 * 1000);
+        }
+
+        // ============================================================
+        // INIZIALIZZAZIONE
+        // ============================================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                updateUIForLoggedInUser();
+                updateProfileUI();
+            }
+            initTheme();
+            updateUnreadCount();
+            
+            AudioSystem.init();
+
+            document.addEventListener('click', function startAudio() {
+                AudioSystem.playBackground();
+                document.removeEventListener('click', startAudio);
+            }, { once: true });
+
+            setTimeout(() => loadLeaderboard('all'), 2000);
+        });
+
+        const style = document.createElement('style');
+        style.textContent =
+            `@keyframes pulse { 0% { transform: scale(0.9); } 50% { transform: scale(1.15); } 100% { transform: scale(0.9); } }`;
+        document.head.appendChild(style);
+
+        console.log('✅ Caccia al Tesoro - Pronto!');
+        console.log('🔊 Audio disponibile!');
+        console.log('🔔 Notifiche attive!');
+        console.log('🏆 Classifica attiva!');
+        console.log('📸 Caricamento foto funzionante!');
+        console.log('🗺️ Selezione posizione attiva!');
+        console.log('🌍 Generazione automatica tesori starter attiva!');
+    </script>
+
+</body>
+</html>

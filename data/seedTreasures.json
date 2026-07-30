@@ -1,0 +1,54 @@
+{
+  "ivrea": [
+    {
+      "title": "🏰 Il Castello di Ivrea",
+      "clue": "Tra le mura antiche, un segreto attende chi sa guardare. Sali in alto e scopri la storia.",
+      "category": "libro",
+      "latitude": 45.4687,
+      "longitude": 7.8843,
+      "address": "Castello di Ivrea",
+      "type": "virtual",
+      "is_starter": true
+    },
+    {
+      "title": "🌉 Il Ponte Vecchio",
+      "clue": "Sotto l'arco di pietra, dove l'acqua scorre, un tesoro ti aspetta tra le onde.",
+      "category": "giocattolo",
+      "latitude": 45.4644,
+      "longitude": 7.8794,
+      "address": "Ponte Vecchio",
+      "type": "virtual",
+      "is_starter": true
+    },
+    {
+      "title": "⛪ La Cattedrale di Ivrea",
+      "clue": "Dove le campane suonano e la luce filtra, un messaggio è nascosto tra le pietre.",
+      "category": "biglietto",
+      "latitude": 45.4672,
+      "longitude": 7.8840,
+      "address": "Cattedrale di Ivrea",
+      "type": "virtual",
+      "is_starter": true
+    },
+    {
+      "title": "🏛️ Piazza Ottinetti",
+      "clue": "Nel cuore della città, dove la gente si incontra, un segreto è custodito da secoli.",
+      "category": "souvenir",
+      "latitude": 45.4675,
+      "longitude": 7.8828,
+      "address": "Piazza Ottinetti",
+      "type": "virtual",
+      "is_starter": true
+    },
+    {
+      "title": "🏭 Il Museo Olivetti",
+      "clue": "Tra macchine e invenzioni, un tesoro aspetta chi ha la mente aperta.",
+      "category": "altro",
+      "latitude": 45.4682,
+      "longitude": 7.8859,
+      "address": "Museo Olivetti",
+      "type": "virtual",
+      "is_starter": true
+    }
+  ]
+}
