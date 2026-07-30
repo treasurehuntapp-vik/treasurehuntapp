@@ -3,7 +3,7 @@
 // ============================================================
 
 // Configurazione
-const API_URL = 'http://192.168.1.98:5000/api';
+const API_URL = 'https://caccia-tesoro-backend.onrender.com/api';
 let currentToken = null;
 let currentUser = null;
 
