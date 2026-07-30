@@ -81,11 +81,12 @@ app.listen(PORT, async () => {
     try {
         await sequelize.authenticate();
         console.log('✅ Database connected');
-        
+ 
         // 🔥 FORZA LA CREAZIONE DELLE TABELLE
         await sequelize.sync({ force: true });
         console.log('✅ Tabelle create (force: true)');
-        
+
+// 🔥 Forzato il deploy per Render
     } catch (error) {
         console.error('❌ Database connection error:', error.message);
     }
