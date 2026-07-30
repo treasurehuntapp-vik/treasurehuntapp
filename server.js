@@ -82,9 +82,9 @@ app.listen(PORT, async () => {
         await sequelize.authenticate();
         console.log('✅ Database connected');
         
-        // Sincronizza i modelli
-        await sequelize.sync({ alter: true });
-        console.log('✅ Tabelle sincronizzate');
+        // 🔥 FORZA LA CREAZIONE DELLE TABELLE
+        await sequelize.sync({ force: true });
+        console.log('✅ Tabelle create (force: true)');
         
     } catch (error) {
         console.error('❌ Database connection error:', error.message);
