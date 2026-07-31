@@ -498,6 +498,12 @@
 
     <script>
         // ============================================================
+        // COSTANTI
+        // ============================================================
+
+        const API_URL = 'https://caccia-tesoro-backend.onrender.com/api';
+
+        // ============================================================
         // FUNZIONI DI NAVIGAZIONE E MAPPA
         // ============================================================
 
@@ -523,45 +529,43 @@
         let hidePhotoDataUrl = null;
 
         // ============================================================
-        // CARICAMENTO FOTO
+        // CARICAMENTO FOTO - VERSIONE CORRETTA
         // ============================================================
-
-        function triggerFileInput() {
-            const input = document.getElementById('hide-photo-input');
-            if (input) {
-                input.click();
-            }
-        }
 
         function initHidePhoto() {
             const input = document.getElementById('hide-photo-input');
-            if (!input) return;
+            if (!input) {
+                console.error('❌ Input file non trovato');
+                return;
+            }
             
             input.removeEventListener('change', handleFileSelect);
             input.addEventListener('change', handleFileSelect);
-            console.log('📸 Input file inizializzato');
+            console.log('📸 Input file inizializzato correttamente');
         }
 
         function handleFileSelect(e) {
             console.log('📸 Evento change catturato!');
             
-            const file = e.target.files[0];
+            const input = e.target;
+            const file = input.files[0];
+            
             if (!file) {
                 console.log('⚠️ Nessun file selezionato');
                 return;
             }
             
-            console.log('📸 File:', file.name, file.size, file.type);
+            console.log('📸 File selezionato:', file.name, file.size, file.type);
             
             if (file.size > 5 * 1024 * 1024) {
                 showToast('❌ La foto è troppo grande (max 5MB)');
-                e.target.value = '';
+                input.value = '';
                 return;
             }
             
             if (!file.type.startsWith('image/')) {
                 showToast('❌ Il file deve essere un\'immagine');
-                e.target.value = '';
+                input.value = '';
                 return;
             }
             
@@ -582,24 +586,48 @@
                     img.src = event.target.result;
                     img.style.display = 'block';
                 }
-                if (placeholder) placeholder.style.display = 'none';
-                if (preview) preview.classList.add('has-image');
-                if (removeBtn) removeBtn.style.display = 'block';
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+                if (preview) {
+                    preview.classList.add('has-image');
+                }
+                if (removeBtn) {
+                    removeBtn.style.display = 'block';
+                }
                 
                 showToast('✅ Foto caricata!');
                 console.log('📸 Anteprima visualizzata');
-                
-                e.target.value = '';
             };
+            
             reader.onerror = function() {
                 console.error('❌ Errore FileReader');
                 showToast('❌ Errore nella lettura del file');
             };
+            
             reader.readAsDataURL(file);
+            
+            input.value = '';
+        }
+
+        function triggerFileInput() {
+            console.log('📸 triggerFileInput chiamato');
+            
+            const input = document.getElementById('hide-photo-input');
+            if (!input) {
+                console.error('❌ Input file non trovato');
+                showToast('⚠️ Errore: input non trovato');
+                return;
+            }
+            
+            input.value = '';
+            input.click();
+            console.log('📸 File input aperto (resettato)');
         }
 
         function clearHidePhoto() {
             console.log('🗑️ Rimozione foto');
+            
             hidePhotoFile = null;
             hidePhotoDataUrl = null;
             
@@ -613,10 +641,18 @@
                 img.src = '';
                 img.style.display = 'none';
             }
-            if (placeholder) placeholder.style.display = 'block';
-            if (preview) preview.classList.remove('has-image');
-            if (removeBtn) removeBtn.style.display = 'none';
-            if (input) input.value = '';
+            if (placeholder) {
+                placeholder.style.display = 'block';
+            }
+            if (preview) {
+                preview.classList.remove('has-image');
+            }
+            if (removeBtn) {
+                removeBtn.style.display = 'none';
+            }
+            if (input) {
+                input.value = '';
+            }
             
             showToast('🗑️ Foto rimossa');
         }
