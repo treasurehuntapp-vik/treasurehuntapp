@@ -7,9 +7,14 @@ import '../src/models/KarmaTransaction.js';
 
 async function initDatabase() {
     try {
-        console.log('🔄 Sincronizzazione database...');
+        console.log('🔄 Connessione al database...');
+        await sequelize.authenticate();
+        console.log('✅ Database connesso');
+
+        console.log('🔄 Creazione tabelle (force: true)...');
         await sequelize.sync({ force: true });
         console.log('✅ Tabelle create con successo!');
+
         process.exit(0);
     } catch (error) {
         console.error('❌ Errore:', error);
