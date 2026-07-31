@@ -494,15 +494,10 @@
 
     </div>
 
+    <!-- Carica il frontend.js PRIMA delle funzioni inline -->
     <script src="/frontend.js"></script>
 
     <script>
-        // ============================================================
-        // COSTANTI
-        // ============================================================
-
-        const API_URL = 'https://caccia-tesoro-backend.onrender.com/api';
-
         // ============================================================
         // FUNZIONI DI NAVIGAZIONE E MAPPA
         // ============================================================
@@ -529,7 +524,7 @@
         let hidePhotoDataUrl = null;
 
         // ============================================================
-        // CARICAMENTO FOTO - VERSIONE CORRETTA
+        // CARICAMENTO FOTO
         // ============================================================
 
         function initHidePhoto() {
@@ -793,23 +788,6 @@
         // NAVIGAZIONE
         // ============================================================
 
-        function startApp() {
-            document.getElementById('screen-home').style.transform = 'translateY(-100%)';
-            document.getElementById('screen-map').style.transform = 'translateY(0)';
-            showToast('📍 Ricerca posizione GPS...');
-
-            setTimeout(() => {
-                initMap();
-                setTimeout(() => {
-                    if (map) {
-                        map.invalidateSize();
-                        generateStartersForUser(userPos.lat, userPos.lng);
-                        setTimeout(() => loadRealTreasures(), 1500);
-                    }
-                }, 500);
-            }, 300);
-        }
-
         function goTo(screen) {
             const screens = {
                 map: 'screen-map',
@@ -832,7 +810,6 @@
 
             if (screen === 'map') {
                 setTimeout(() => { if (map) map.invalidateSize(); }, 400);
-                generateStartersForUser(userPos.lat, userPos.lng);
                 setTimeout(() => loadRealTreasures(), 1500);
             }
 
@@ -868,53 +845,6 @@
             }
             if (step === 2) {
                 setTimeout(() => initHideMap(), 300);
-            }
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').textContent = msg;
-            toast.classList.add('show');
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        // ============================================================
-        // GENERA TESORI STARTER
-        // ============================================================
-
-        async function generateStartersForUser(lat, lng) {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                console.log('⚠️ Utente non loggato, salto generazione starter');
-                return;
-            }
-
-            try {
-                console.log(`📍 Controllo tesori starter per posizione: ${lat}, ${lng}`);
-                const response = await fetch(
-                    `${API_URL}/treasures/starter/generate?lat=${lat}&lng=${lng}`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
-
-                const data = await response.json();
-                if (data.success) {
-                    console.log(`✅ ${data.message}`);
-                    if (data.data && data.data.length > 0) {
-                        console.log(`📍 Creati ${data.data.length} tesori starter`);
-                        data.data.forEach((t, i) => {
-                            console.log(`  ${i+1}. ${t.title}`);
-                        });
-                    }
-                } else {
-                    console.log(`ℹ️ ${data.message}`);
-                }
-            } catch (error) {
-                console.error('❌ Errore generazione starter:', error);
             }
         }
 
