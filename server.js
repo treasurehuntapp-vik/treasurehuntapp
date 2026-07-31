@@ -45,6 +45,46 @@ app.get('/api/health', (req, res) => {
 });
 
 // ============================================================
+// 🔥 NUOVA ROTTA /api CON DOCUMENTAZIONE 🔥
+// ============================================================
+app.get('/api', (req, res) => {
+    res.json({
+        nome: 'Caccia al Tesoro API',
+        versione: '1.0.0',
+        status: 'online',
+        documentazione: '/api/docs',
+        health: '/api/health',
+        endpoints: {
+            auth: {
+                registrazione: 'POST /api/auth/register',
+                login: 'POST /api/auth/login'
+            },
+            users: {
+                profilo: 'GET /api/users/:id',
+                tutti: 'GET /api/users'
+            },
+            treasures: {
+                lista: 'GET /api/treasures',
+                crea: 'POST /api/treasures',
+                dettaglio: 'GET /api/treasures/:id'
+            },
+            karma: {
+                punteggio: 'GET /api/karma/:userId',
+                aggiorna: 'POST /api/karma'
+            },
+            reports: {
+                crea: 'POST /api/reports',
+                lista: 'GET /api/reports'
+            },
+            notifications: {
+                lista: 'GET /api/notifications',
+                segnaLetta: 'PUT /api/notifications/:id'
+            }
+        }
+    });
+});
+
+// ============================================================
 // ROUTE PER IL FRONTEND (solo se il file index.html esiste)
 // ============================================================
 // app.get('/', (req, res) => {
