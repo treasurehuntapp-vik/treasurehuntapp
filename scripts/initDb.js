@@ -23,3 +23,4 @@ async function initDatabase() {
 }
 
 initDatabase();
+console.log('✅ Forzato deploy su Render');
