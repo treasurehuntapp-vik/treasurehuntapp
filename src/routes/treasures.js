@@ -345,8 +345,43 @@ router.get('/starter/generate', authMiddleware, async (req, res) => {
         const selectedLandmarks = landmarks.slice(0, 5);
 
         for (const landmark of selectedLandmarks) {
-            const title = generateTitle(landmark);
-            const clue = generateClue(landmark);
+            // 🔥 FIX: Migliora il nome del landmark se è un placeholder
+            let landmarkName = landmark.name || '';
+            
+            // Se il nome è un placeholder o vuoto, generane uno migliore
+            if (!landmarkName || 
+                landmarkName.includes('Punto di Interesse') || 
+                landmarkName === 'default' ||
+                landmarkName.length < 3) {
+                
+                const typeNames = {
+                    'castle': 'Castello Antico',
+                    'park': 'Parco della Città',
+                    'museum': 'Museo Civico',
+                    'tourism': 'Attrazione Locale',
+                    'place_of_worship': 'Chiesa Storica',
+                    'default': 'Tesoro Nascosto'
+                };
+                
+                const typeName = typeNames[landmark.type] || 'Tesoro Nascosto';
+                const cityName = city || 'della tua città';
+                landmarkName = `${typeName} di ${cityName}`;
+                
+                // Aggiungi un numero per differenziare
+                const index = selectedLandmarks.indexOf(landmark) + 1;
+                if (selectedLandmarks.length > 1) {
+                    landmarkName = `${landmarkName} (${index})`;
+                }
+            }
+            
+            // Usa il nome migliorato
+            const improvedLandmark = {
+                ...landmark,
+                name: landmarkName
+            };
+
+            const title = generateTitle(improvedLandmark);
+            const clue = generateClue(improvedLandmark);
 
             const treasure = await Treasure.create({
                 user_id: user.id,
@@ -363,7 +398,7 @@ router.get('/starter/generate', authMiddleware, async (req, res) => {
             });
 
             createdTreasures.push(treasure);
-            console.log(`  ✅ Creato: ${title}`);
+            console.log(`  ✅ Creato: ${title} (${landmark.type || 'generico'})`);
         }
 
         console.log(`🎉 Creati ${createdTreasures.length} tesori starter per ${city}`);

@@ -90,6 +90,47 @@ function getTorinoLandmarks() {
 }
 
 /**
+ * 🔥 LUOGHI DI DEFAULT MIGLIORATI (se OpenStreetMap non risponde)
+ */
+function getDefaultLandmarks(lat, lng) {
+    const offset = 0.002;
+    
+    // Nomi specifici per città italiane
+    const cityNames = [
+        'Torre Antica', 'Giardino Segreto', 'Museo Civico', 'Piazza Centrale', 'Chiesa Vecchia',
+        'Palazzo Storico', 'Villa Nobiliare', 'Teatro Comunale', 'Biblioteca Antica', 'Giardino Botanico'
+    ];
+    
+    const types = ['castle', 'park', 'museum', 'tourism', 'place_of_worship'];
+    const categories = ['libro', 'giocattolo', 'biglietto', 'souvenir', 'altro'];
+    const emojis = ['🏰', '🌳', '🏛️', '📍', '⛪'];
+    
+    const landmarks = [];
+    
+    for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * 2 * Math.PI;
+        const dist = offset * (1 + i * 0.2);
+        const latOffset = dist * Math.cos(angle);
+        const lngOffset = dist * Math.sin(angle);
+        
+        // Scegli un nome a caso dalla lista
+        const nameIndex = (i + Math.floor(Math.random() * 3)) % cityNames.length;
+        const typeIndex = i % types.length;
+        
+        landmarks.push({
+            name: `${emojis[i % emojis.length]} ${cityNames[nameIndex]}`,
+            lat: lat + latOffset,
+            lon: lng + lngOffset,
+            type: types[typeIndex],
+            category: categories[i % categories.length]
+        });
+    }
+    
+    console.log('📍 Generati luoghi di default con nomi specifici');
+    return landmarks;
+}
+
+/**
  * Ottiene i luoghi iconici di una città da OpenStreetMap
  * PRIMA prova OpenStreetMap, POI usa i predefiniti come ultima spiaggia
  */
@@ -218,8 +259,8 @@ export async function getCityLandmarks(lat, lng, radius = 3000) {
             return getTorinoLandmarks();
         }
 
-        // Fallback generico
-        console.log('📍 Genero luoghi di default...');
+        // Fallback generico - ora con nomi specifici!
+        console.log('📍 Genero luoghi di default con nomi specifici...');
         return getDefaultLandmarks(lat, lng);
 
     } catch (error) {
@@ -258,23 +299,6 @@ function getCategoryFromTags(tags) {
     if (tags.leisure === 'park' || tags.leisure === 'garden') return 'souvenir';
     if (tags.amenity === 'theatre' || tags.amenity === 'cinema') return 'souvenir';
     return 'giocattolo';
-}
-
-/**
- * Luoghi di default se OpenStreetMap non risponde
- */
-function getDefaultLandmarks(lat, lng) {
-    const offset = 0.002;
-    const names = ['Punto di Interesse 1', 'Punto di Interesse 2', 'Punto di Interesse 3', 'Punto di Interesse 4', 'Punto di Interesse 5'];
-    const categories = ['libro', 'giocattolo', 'biglietto', 'souvenir', 'altro'];
-    
-    return [
-        { name: names[0], lat: lat + offset, lon: lng + offset, type: 'default', category: categories[0] },
-        { name: names[1], lat: lat - offset, lon: lng + offset, type: 'default', category: categories[1] },
-        { name: names[2], lat: lat + offset, lon: lng - offset, type: 'default', category: categories[2] },
-        { name: names[3], lat: lat - offset, lon: lng - offset, type: 'default', category: categories[3] },
-        { name: names[4], lat: lat, lon: lng + offset * 2, type: 'default', category: categories[4] }
-    ];
 }
 
 /**
