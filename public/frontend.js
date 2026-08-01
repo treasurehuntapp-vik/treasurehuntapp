@@ -533,10 +533,51 @@ async function getUnreadCount() {
 }
 
 // ============================================================
-// 14. START APP - Avvia l'applicazione
+// 14. GENERA TESORI STARTER PER L'UTENTE
 // ============================================================
 
-function startApp() {
+async function generateStartersForUser(lat, lng) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('⚠️ Utente non loggato, salto generazione starter');
+        return;
+    }
+
+    try {
+        console.log(`📍 Controllo tesori starter per posizione: ${lat}, ${lng}`);
+        
+        const response = await fetch(
+            `${API_URL}/treasures/starter/generate?lat=${lat}&lng=${lng}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log(`✅ ${data.message}`);
+            if (data.data && data.data.length > 0) {
+                console.log(`📍 Creati ${data.data.length} tesori starter`);
+                data.data.forEach((t, i) => {
+                    console.log(`  ${i+1}. ${t.title}`);
+                });
+            }
+        } else {
+            console.log(`ℹ️ ${data.message}`);
+        }
+    } catch (error) {
+        console.error('❌ Errore generazione starter:', error);
+    }
+}
+
+// ============================================================
+// 15. START APP - Avvia l'applicazione
+// ============================================================
+
+async function startApp() {
     console.log('🚀 Avvio applicazione...');
     
     // Verifica se l'utente è loggato
@@ -562,36 +603,6 @@ function startApp() {
         mapScreen.style.transform = 'translateY(0)';
         console.log('🗺️ Mappa visualizzata');
         
-        // Inizializza la mappa dopo un breve ritardo
-        setTimeout(() => {
-            if (typeof initMap === 'function') {
-                initMap();
-            } else {
-                console.warn('⚠️ initMap non definita, assicurati che sia definita nel DOM');
-            }
-        }, 300);
-        
-        // Carica i tesori
-        setTimeout(() => {
-            loadRealTreasures();
-        }, 1500);
-    } else {
-        console.error('❌ Schermate non trovate');
-    }
-}
-
-// ============================================================
-// 15. FUNZIONE PER RICARICARE I TESORI DAL BACKEND
-// ============================================================
-
-async function loadRealTreasures() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        console.log('⚠️ Utente non loggato, salto caricamento tesori');
-        return;
-    }
-    
-    try {
         // Ottieni la posizione corrente
         let lat = 45.4660;
         let lng = 7.8830;
@@ -612,33 +623,90 @@ async function loadRealTreasures() {
             }
         }
         
-        // Carica i tesori vicini
-        const treasures = await getNearbyTreasures(lat, lng, 10000);
+        // 🔥 PASSO 1: Genera i tesori starter (se necessario)
+        await generateStartersForUser(lat, lng);
         
-        if (treasures && treasures.length > 0) {
-            window.realTreasures = treasures;
-            console.log(`✅ Caricati ${treasures.length} tesori`);
-            
-            // Aggiorna il contatore
-            const foundCount = document.getElementById('found-count');
-            if (foundCount) {
-                foundCount.textContent = treasures.length;
+        // 🔥 PASSO 2: Inizializza la mappa
+        setTimeout(() => {
+            if (typeof initMap === 'function') {
+                initMap();
+            } else {
+                console.warn('⚠️ initMap non definita, assicurati che sia definita nel DOM');
             }
-            
-            // Aggiungi i marker sulla mappa
-            if (typeof addRealTreasureMarker === 'function') {
-                treasures.forEach(t => addRealTreasureMarker(t));
-            }
-        } else {
-            console.log('ℹ️ Nessun tesoro trovato');
-        }
-    } catch (error) {
-        console.error('❌ Errore caricamento tesori:', error);
+        }, 300);
+        
+        // 🔥 PASSO 3: Carica i tesori (ora dovrebbero esserci gli starter)
+        setTimeout(() => {
+            loadRealTreasures();
+        }, 1500);
+    } else {
+        console.error('❌ Schermate non trovate');
     }
 }
 
 // ============================================================
-// 16. SISTEMA AUDIO
+// 16. CARICA TESORI REALI DAL BACKEND
+// ============================================================
+
+async function loadRealTreasures() {
+    if (!map) {
+        console.log('⚠️ Mappa non inizializzata, riprovo tra 1 secondo...');
+        setTimeout(() => loadRealTreasures(), 1000);
+        return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('⚠️ Utente non loggato, salto caricamento tesori');
+        return;
+    }
+
+    try {
+        // Ottieni la posizione corrente
+        let lat = 45.4660;
+        let lng = 7.8830;
+        
+        if (navigator.geolocation) {
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 5000
+                    });
+                });
+                lat = position.coords.latitude;
+                lng = position.coords.longitude;
+                console.log('📍 Posizione GPS per tesori:', lat, lng);
+            } catch (e) {
+                console.log('📍 Usando posizione predefinita (Ivrea)');
+            }
+        }
+        
+        // 🔥 Usa getNearbyTreasures per caricare i tesori
+        const treasures = await getNearbyTreasures(lat, lng, 10000);
+        console.log('📦 Risultato getNearbyTreasures:', treasures);
+
+        if (treasures && treasures.length > 0) {
+            window.realTreasures = treasures;
+            clearTreasureMarkers();
+
+            treasures.forEach(t => {
+                addRealTreasureMarker(t);
+            });
+
+            document.getElementById('found-count').textContent = treasures.length;
+            console.log(`✅ Caricati ${treasures.length} tesori dal database`);
+        } else {
+            console.log('ℹ️ Nessun tesoro trovato nelle vicinanze');
+            document.getElementById('found-count').textContent = '0';
+        }
+    } catch (error) {
+        console.error('❌ Errore nel caricamento dei tesori:', error);
+    }
+}
+
+// ============================================================
+// 17. SISTEMA AUDIO
 // ============================================================
 
 const AudioSystem = {
@@ -706,16 +774,133 @@ const AudioSystem = {
     }
 };
 
-// Inizializza l'audio quando la pagina è pronta
-document.addEventListener('DOMContentLoaded', function() {
-    AudioSystem.init();
-    
-    // Avvia la musica solo se l'utente interagisce
-    document.addEventListener('click', function startAudio() {
-        AudioSystem.playBackground();
-        document.removeEventListener('click', startAudio);
-    }, { once: true });
-});
+// ============================================================
+// 18. FUNZIONE PER PULIRE I MARKER (dichiarata per sicurezza)
+// ============================================================
+
+function clearTreasureMarkers() {
+    if (window.treasureMarkers) {
+        window.treasureMarkers.forEach(marker => {
+            if (map) map.removeLayer(marker);
+        });
+        window.treasureMarkers = [];
+    }
+}
+
+// ============================================================
+// 19. FUNZIONE PER AGGIUNGERE MARKER (dichiarata per sicurezza)
+// ============================================================
+
+function addRealTreasureMarker(treasure) {
+    if (!map) {
+        console.log('⚠️ Mappa non disponibile, salto il marker');
+        return;
+    }
+
+    let color, glow, size, anim;
+
+    if (treasure.level === 'relic') {
+        color = '#ff1744';
+        glow = '0 0 40px rgba(255,23,68,0.9)';
+        size = '28px';
+        anim = 'animation:pulse 1.5s infinite, relicGlow 2s infinite alternate;';
+    } else if (treasure.level === 'warm') {
+        color = '#ffd700';
+        glow = '0 0 30px rgba(255,215,0,0.7)';
+        size = '24px';
+        anim = 'animation:pulse 2s infinite;';
+    } else {
+        color = '#39ff14';
+        glow = '0 0 20px rgba(57,255,20,0.4)';
+        size = '20px';
+        anim = '';
+    }
+
+    let icon = '📦';
+    const category = treasure.category || '';
+    if (category.includes('libro') || category === 'book' || category === '📖') icon = '📖';
+    else if (category.includes('giocattolo') || category === 'toy' || category === '🧸') icon = '🧸';
+    else if (category.includes('biglietto') || category === 'ticket' || category === '🎫') icon = '🎫';
+    else if (category.includes('souvenir') || category === '🎁') icon = '🎁';
+    else if (category.includes('altro') || category === 'other') icon = '📦';
+
+    if (treasure.category && treasure.category.match(/[\u{1F300}-\u{1FAFF}]/u)) {
+        icon = treasure.category;
+    }
+
+    const html = `
+        <div style="
+            width:${size};height:${size};
+            background:${color};
+            border-radius:50%;
+            box-shadow:${glow};
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:${treasure.level === 'relic' ? '14px' : '11px'};
+            border:2px solid rgba(255,255,255,0.15);
+            cursor:pointer;
+            ${anim}
+            position:relative;
+            transition: transform 0.2s;
+        ">
+            ${icon}
+            <div style="
+                position:absolute;
+                top:-15px;left:-15px;
+                width:${parseInt(size) + 30}px;
+                height:${parseInt(size) + 30}px;
+                background:transparent;
+                border-radius:50%;
+                z-index:10;
+            "></div>
+            ${treasure.level === 'relic' ? `
+                <div style="
+                    position:absolute;
+                    top:-8px;right:-8px;
+                    font-size:12px;
+                    animation: spin 3s linear infinite;
+                ">⚡</div>
+            ` : ''}
+            ${treasure.level === 'warm' ? `
+                <div style="
+                    position:absolute;
+                    top:-8px;right:-8px;
+                    font-size:12px;
+                ">🔥</div>
+            ` : ''}
+        </div>
+    `;
+
+    const iconL = L.divIcon({
+        className: 'treasure-marker',
+        html: html,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+
+    const marker = L.marker([treasure.latitude, treasure.longitude], { icon: iconL }).addTo(map);
+
+    marker.on('click', function(e) {
+        L.DomEvent.stopPropagation(e);
+        if (typeof openClue === 'function') {
+            openClue(treasure.id);
+        } else {
+            console.warn('⚠️ openClue non definita');
+        }
+    });
+    marker.on('tap', function(e) {
+        L.DomEvent.stopPropagation(e);
+        if (typeof openClue === 'function') {
+            openClue(treasure.id);
+        } else {
+            console.warn('⚠️ openClue non definita');
+        }
+    });
+
+    if (!window.treasureMarkers) window.treasureMarkers = [];
+    window.treasureMarkers.push(marker);
+}
 
 // ============================================================
 // ESPORTA FUNZIONI (per uso globale)
@@ -750,9 +935,12 @@ window.getUnreadCount = getUnreadCount;
 window.AudioSystem = AudioSystem;
 window.toggleAudio = () => AudioSystem.toggleMute();
 
-// App
+// App - TESORI STARTER
 window.startApp = startApp;
 window.loadRealTreasures = loadRealTreasures;
+window.generateStartersForUser = generateStartersForUser;
+window.clearTreasureMarkers = clearTreasureMarkers;
+window.addRealTreasureMarker = addRealTreasureMarker;
 
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
@@ -760,6 +948,7 @@ console.log('  - registerUser(), loginUser()');
 console.log('  - getNearbyTreasures(), createTreasure()');
 console.log('  - getLeaderboard(), getKarmaHistory()');
 console.log('  - handleLogin(), handleRegister(), handleLogout()');
-console.log('  - startApp() - Avvia la mappa');
+console.log('  - startApp() - Avvia la mappa e genera starter');
 console.log('  - loadRealTreasures() - Carica i tesori');
+console.log('  - generateStartersForUser() - Genera tesori starter');
 console.log('  - AudioSystem - Gestione audio');
