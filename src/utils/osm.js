@@ -1,5 +1,5 @@
 // ============================================================
-// UTILITY PER OPENSTREETMAP - VERSIONE CON FALLBACK LOCALE
+// UTILITY PER OPENSTREETMAP - VERSIONE CON LUOGHI REALI
 // ============================================================
 
 /**
@@ -183,108 +183,146 @@ async function searchNominatim(lat, lng, maxResults = 8) {
 }
 
 /**
- * 🏙️ LUOGHI PREDEFINITI PER CITTÀ ITALIANE
+ * 🛡️ FALLBACK DI SICUREZZA - USA SOLO LUOGHI REALI VICINI ALL'UTENTE
  */
-function getDefaultLandmarksForCity(lat, lng) {
-    const cities = [
-        {
-            name: 'Ivrea',
-            center: { lat: 45.4660, lng: 7.8830 },
-            landmarks: [
-                { name: '🏰 Castello di Ivrea', lat: 45.46875, lon: 7.88430, type: 'castle', category: 'libro' },
-                { name: '🌉 Ponte Vecchio', lat: 45.46445, lon: 7.87940, type: 'tourism', category: 'giocattolo' },
-                { name: '⛪ Cattedrale di Ivrea', lat: 45.46715, lon: 7.88395, type: 'place_of_worship', category: 'biglietto' },
-                { name: '🏛️ Piazza Ottinetti', lat: 45.46750, lon: 7.88280, type: 'tourism', category: 'souvenir' },
-                { name: '🏭 Museo Olivetti', lat: 45.46820, lon: 7.88590, type: 'museum', category: 'altro' },
-                { name: '🌳 Parco della Polveriera', lat: 45.46300, lon: 7.88200, type: 'park', category: 'souvenir' }
-            ]
-        },
-        {
-            name: 'Torino',
-            center: { lat: 45.0703, lng: 7.6869 },
-            landmarks: [
-                { name: '🏛️ Piazza Castello', lat: 45.07030, lon: 7.68690, type: 'tourism', category: 'libro' },
-                { name: '🏛️ Museo Egizio', lat: 45.06840, lon: 7.68430, type: 'museum', category: 'altro' },
-                { name: '🏛️ Palazzo Reale', lat: 45.07160, lon: 7.68600, type: 'castle', category: 'libro' },
-                { name: '⛪ Duomo di Torino', lat: 45.07310, lon: 7.68540, type: 'place_of_worship', category: 'biglietto' },
-                { name: '🌳 Parco del Valentino', lat: 45.05500, lon: 7.68600, type: 'park', category: 'souvenir' },
-                { name: '🏛️ Mole Antonelliana', lat: 45.06890, lon: 7.69340, type: 'tourism', category: 'souvenir' }
-            ]
-        },
-        {
-            name: 'Milano',
-            center: { lat: 45.4642, lng: 9.1900 },
-            landmarks: [
-                { name: '🏛️ Duomo di Milano', lat: 45.4641, lon: 9.1919, type: 'place_of_worship', category: 'biglietto' },
-                { name: '🏛️ Galleria Vittorio Emanuele', lat: 45.4658, lon: 9.1904, type: 'tourism', category: 'souvenir' },
-                { name: '🏰 Castello Sforzesco', lat: 45.4705, lon: 9.1791, type: 'castle', category: 'libro' },
-                { name: '🎭 Teatro alla Scala', lat: 45.4670, lon: 9.1885, type: 'tourism', category: 'libro' },
-                { name: '🌳 Parco Sempione', lat: 45.4740, lon: 9.1760, type: 'park', category: 'souvenir' }
-            ]
-        }
+function getSafeFallbackLandmarks(lat, lng) {
+    // Database di luoghi REALI in Italia con coordinate PRECISE
+    const realPlaces = [
+        // Ivrea
+        { name: '🏰 Castello di Ivrea', lat: 45.46875, lon: 7.88430, type: 'castle', category: 'libro' },
+        { name: '⛪ Cattedrale di Ivrea', lat: 45.46715, lon: 7.88395, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza Ottinetti', lat: 45.46750, lon: 7.88280, type: 'tourism', category: 'souvenir' },
+        { name: '🏭 Museo Olivetti', lat: 45.46820, lon: 7.88590, type: 'museum', category: 'altro' },
+        { name: '🌳 Parco della Polveriera', lat: 45.46300, lon: 7.88200, type: 'park', category: 'souvenir' },
+        { name: '🌉 Ponte Vecchio', lat: 45.46445, lon: 7.87940, type: 'tourism', category: 'giocattolo' },
+        
+        // Torino
+        { name: '🏛️ Piazza Castello', lat: 45.07030, lon: 7.68690, type: 'tourism', category: 'libro' },
+        { name: '🏛️ Museo Egizio', lat: 45.06840, lon: 7.68430, type: 'museum', category: 'altro' },
+        { name: '🏛️ Palazzo Reale', lat: 45.07160, lon: 7.68600, type: 'castle', category: 'libro' },
+        { name: '⛪ Duomo di Torino', lat: 45.07310, lon: 7.68540, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🌳 Parco del Valentino', lat: 45.05500, lon: 7.68600, type: 'park', category: 'souvenir' },
+        { name: '🏛️ Mole Antonelliana', lat: 45.06890, lon: 7.69340, type: 'tourism', category: 'souvenir' },
+        
+        // Milano
+        { name: '🏛️ Duomo di Milano', lat: 45.46410, lon: 9.19190, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Galleria Vittorio Emanuele', lat: 45.46580, lon: 9.19040, type: 'tourism', category: 'souvenir' },
+        { name: '🏰 Castello Sforzesco', lat: 45.47050, lon: 9.17910, type: 'castle', category: 'libro' },
+        { name: '🎭 Teatro alla Scala', lat: 45.46700, lon: 9.18850, type: 'tourism', category: 'libro' },
+        { name: '🌳 Parco Sempione', lat: 45.47400, lon: 9.17600, type: 'park', category: 'souvenir' },
+        { name: '⛪ Basilica di Sant\'Ambrogio', lat: 45.46230, lon: 9.17550, type: 'place_of_worship', category: 'biglietto' },
+        
+        // Roma
+        { name: '🏛️ Colosseo', lat: 41.89020, lon: 12.49220, type: 'castle', category: 'libro' },
+        { name: '⛪ Basilica di San Pietro', lat: 41.90220, lon: 12.45390, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza Navona', lat: 41.89930, lon: 12.47330, type: 'tourism', category: 'souvenir' },
+        { name: '🏛️ Fontana di Trevi', lat: 41.90090, lon: 12.48330, type: 'tourism', category: 'souvenir' },
+        { name: '🌳 Villa Borghese', lat: 41.91400, lon: 12.48400, type: 'park', category: 'souvenir' },
+        
+        // Firenze
+        { name: '⛪ Duomo di Firenze', lat: 43.77310, lon: 11.25600, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza del Campo', lat: 43.31830, lon: 11.33170, type: 'tourism', category: 'souvenir' },
+        { name: '🏛️ Piazza dei Miracoli', lat: 43.72310, lon: 10.39660, type: 'tourism', category: 'souvenir' },
+        { name: '🏛️ Piazza della Signoria', lat: 43.76960, lon: 11.25570, type: 'tourism', category: 'libro' },
+        
+        // Venezia
+        { name: '🏛️ Piazza San Marco', lat: 45.43430, lon: 12.33880, type: 'tourism', category: 'souvenir' },
+        { name: '🌉 Ponte di Rialto', lat: 45.43800, lon: 12.33500, type: 'tourism', category: 'giocattolo' },
+        { name: '⛪ Basilica di San Marco', lat: 45.43440, lon: 12.33970, type: 'place_of_worship', category: 'biglietto' },
+        
+        // Napoli
+        { name: '🏛️ Palazzo Reale di Napoli', lat: 40.83640, lon: 14.24920, type: 'castle', category: 'libro' },
+        { name: '⛪ Duomo di Napoli', lat: 40.85250, lon: 14.25920, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Castel dell\'Ovo', lat: 40.82820, lon: 14.24760, type: 'castle', category: 'libro' },
+        
+        // Altri luoghi in Italia
+        { name: '🏰 Castello di Gradara', lat: 43.95560, lon: 12.77170, type: 'castle', category: 'libro' },
+        { name: '🏛️ Palazzo Ducale di Urbino', lat: 43.72440, lon: 12.63650, type: 'museum', category: 'altro' },
+        { name: '🏰 Castello di Brescia', lat: 45.54160, lon: 10.21170, type: 'castle', category: 'libro' },
+        { name: '⛪ Duomo di Amalfi', lat: 40.63430, lon: 14.60260, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza Armerina', lat: 37.38340, lon: 14.36970, type: 'tourism', category: 'souvenir' },
+        { name: '🌳 Parco Nazionale del Gargano', lat: 41.76670, lon: 15.88330, type: 'park', category: 'souvenir' }
     ];
-    
-    for (const city of cities) {
-        const distance = calculateDistance(lat, lng, city.center.lat, city.center.lng);
-        if (distance < 15000) {
-            console.log(`📍 Rilevata ${city.name}, uso luoghi predefiniti...`);
-            return city.landmarks;
-        }
-    }
-    
-    return [];
+
+    // Calcola la distanza di ogni luogo dall'utente
+    const placesWithDistance = realPlaces.map(place => ({
+        ...place,
+        distance: calculateDistance(lat, lng, place.lat, place.lon)
+    }));
+
+    // Ordina per distanza e prendi i 5 più vicini
+    const sorted = placesWithDistance
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 5);
+
+    console.log(`📍 Usati ${sorted.length} luoghi reali vicini all'utente (distanza media: ${Math.round(sorted.reduce((sum, p) => sum + p.distance, 0) / sorted.length)}m)`);
+    return sorted;
 }
 
 /**
- * 🛡️ FALLBACK DI SICUREZZA - GENERA LUOGHI PLAUSIBILI VICINI ALL'UTENTE
+ * 🏙️ LUOGHI PREDEFINITI PER CITTÀ (usato da getCityLandmarks)
  */
-function getSafeFallbackLandmarks(lat, lng) {
-    // Nomi di luoghi tipici italiani
-    const emojis = ['🏛️', '⛪', '🌳', '🏰', '🏛️'];
-    const types = ['tourism', 'place_of_worship', 'park', 'castle', 'museum'];
-    const categories = ['souvenir', 'biglietto', 'souvenir', 'libro', 'altro'];
-    
-    // Genera 5 luoghi con coordinate reali e plausibili
-    const landmarks = [];
-    const radius = 0.003; // ~300 metri di raggio
-    
-    for (let i = 0; i < 5; i++) {
-        // Angolo diverso per ogni punto
-        const angle = (i / 5) * 2 * Math.PI + 0.3;
-        const distance = radius * (0.6 + i * 0.15);
+function getDefaultLandmarksForCity(lat, lng) {
+    // Usa lo stesso database di getSafeFallbackLandmarks
+    const realPlaces = [
+        // Ivrea
+        { name: '🏰 Castello di Ivrea', lat: 45.46875, lon: 7.88430, type: 'castle', category: 'libro' },
+        { name: '⛪ Cattedrale di Ivrea', lat: 45.46715, lon: 7.88395, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza Ottinetti', lat: 45.46750, lon: 7.88280, type: 'tourism', category: 'souvenir' },
+        { name: '🏭 Museo Olivetti', lat: 45.46820, lon: 7.88590, type: 'museum', category: 'altro' },
+        { name: '🌳 Parco della Polveriera', lat: 45.46300, lon: 7.88200, type: 'park', category: 'souvenir' },
+        { name: '🌉 Ponte Vecchio', lat: 45.46445, lon: 7.87940, type: 'tourism', category: 'giocattolo' },
         
-        // Calcola coordinate reali
-        const latOffset = distance * Math.cos(angle);
-        const lngOffset = distance * Math.sin(angle);
+        // Torino
+        { name: '🏛️ Piazza Castello', lat: 45.07030, lon: 7.68690, type: 'tourism', category: 'libro' },
+        { name: '🏛️ Museo Egizio', lat: 45.06840, lon: 7.68430, type: 'museum', category: 'altro' },
+        { name: '🏛️ Palazzo Reale', lat: 45.07160, lon: 7.68600, type: 'castle', category: 'libro' },
+        { name: '⛪ Duomo di Torino', lat: 45.07310, lon: 7.68540, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🌳 Parco del Valentino', lat: 45.05500, lon: 7.68600, type: 'park', category: 'souvenir' },
+        { name: '🏛️ Mole Antonelliana', lat: 45.06890, lon: 7.69340, type: 'tourism', category: 'souvenir' },
         
-        const placeLat = lat + latOffset;
-        const placeLng = lng + lngOffset;
+        // Milano
+        { name: '🏛️ Duomo di Milano', lat: 45.46410, lon: 9.19190, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Galleria Vittorio Emanuele', lat: 45.46580, lon: 9.19040, type: 'tourism', category: 'souvenir' },
+        { name: '🏰 Castello Sforzesco', lat: 45.47050, lon: 9.17910, type: 'castle', category: 'libro' },
+        { name: '🎭 Teatro alla Scala', lat: 45.46700, lon: 9.18850, type: 'tourism', category: 'libro' },
+        { name: '🌳 Parco Sempione', lat: 45.47400, lon: 9.17600, type: 'park', category: 'souvenir' },
+        { name: '⛪ Basilica di Sant\'Ambrogio', lat: 45.46230, lon: 9.17550, type: 'place_of_worship', category: 'biglietto' },
         
-        // Scegli un nome dalla lista
-        let name = '';
-        if (i === 0) {
-            name = 'Piazza Centrale';
-        } else if (i === 1) {
-            name = 'Chiesa Parrocchiale';
-        } else if (i === 2) {
-            name = 'Parco Pubblico';
-        } else if (i === 3) {
-            name = 'Monumento Storico';
-        } else if (i === 4) {
-            name = 'Biblioteca Comunale';
-        }
+        // Roma
+        { name: '🏛️ Colosseo', lat: 41.89020, lon: 12.49220, type: 'castle', category: 'libro' },
+        { name: '⛪ Basilica di San Pietro', lat: 41.90220, lon: 12.45390, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza Navona', lat: 41.89930, lon: 12.47330, type: 'tourism', category: 'souvenir' },
+        { name: '🏛️ Fontana di Trevi', lat: 41.90090, lon: 12.48330, type: 'tourism', category: 'souvenir' },
+        { name: '🌳 Villa Borghese', lat: 41.91400, lon: 12.48400, type: 'park', category: 'souvenir' },
         
-        landmarks.push({
-            name: `${emojis[i % emojis.length]} ${name}`,
-            lat: placeLat,
-            lon: placeLng,
-            type: types[i % types.length],
-            category: categories[i % categories.length]
-        });
-    }
-    
-    console.log(`📍 Generati ${landmarks.length} luoghi plausibili vicini all'utente`);
-    return landmarks;
+        // Firenze
+        { name: '⛪ Duomo di Firenze', lat: 43.77310, lon: 11.25600, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza del Campo', lat: 43.31830, lon: 11.33170, type: 'tourism', category: 'souvenir' },
+        { name: '🏛️ Piazza dei Miracoli', lat: 43.72310, lon: 10.39660, type: 'tourism', category: 'souvenir' },
+        { name: '🏛️ Piazza della Signoria', lat: 43.76960, lon: 11.25570, type: 'tourism', category: 'libro' },
+        
+        // Venezia
+        { name: '🏛️ Piazza San Marco', lat: 45.43430, lon: 12.33880, type: 'tourism', category: 'souvenir' },
+        { name: '🌉 Ponte di Rialto', lat: 45.43800, lon: 12.33500, type: 'tourism', category: 'giocattolo' },
+        { name: '⛪ Basilica di San Marco', lat: 45.43440, lon: 12.33970, type: 'place_of_worship', category: 'biglietto' },
+        
+        // Napoli
+        { name: '🏛️ Palazzo Reale di Napoli', lat: 40.83640, lon: 14.24920, type: 'castle', category: 'libro' },
+        { name: '⛪ Duomo di Napoli', lat: 40.85250, lon: 14.25920, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Castel dell\'Ovo', lat: 40.82820, lon: 14.24760, type: 'castle', category: 'libro' }
+    ];
+
+    // Ordina per distanza e prendi i 5 più vicini
+    const sorted = realPlaces
+        .map(place => ({
+            ...place,
+            distance: calculateDistance(lat, lng, place.lat, place.lon)
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 5);
+
+    return sorted;
 }
 
 /**
@@ -320,23 +358,23 @@ export async function getCityLandmarks(lat, lng, radius = 3000) {
         }
     }
     
-    // Tentativo 4: Luoghi predefiniti per città
+    // Tentativo 4: Luoghi predefiniti (dal database di luoghi reali)
     if (landmarks.length < 3) {
-        console.log('⚠️ Uso luoghi predefiniti per città...');
+        console.log('⚠️ Uso luoghi predefiniti (database di luoghi reali)...');
         const defaultLandmarks = getDefaultLandmarksForCity(lat, lng);
         if (defaultLandmarks.length > 0) {
             return defaultLandmarks;
         }
     }
     
-    // Ultima spiaggia: luoghi plausibili locali
+    // Ultima spiaggia: luoghi reali dal database di fallback
     if (landmarks.length > 0) {
         console.log(`⚠️ Trovati solo ${landmarks.length} luoghi, ma li uso comunque.`);
         return landmarks;
     }
     
-    // Fallback finale: luoghi plausibili vicini all'utente
-    console.log('⚠️ Nessun luogo trovato, genero luoghi plausibili vicini...');
+    // Fallback finale: SOLO LUOGHI REALI!
+    console.log('⚠️ Nessun luogo trovato, uso luoghi reali vicini...');
     return getSafeFallbackLandmarks(lat, lng);
 }
 
