@@ -45,7 +45,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // ============================================================
-// 🔥 NUOVA ROTTA /api CON DOCUMENTAZIONE 🔥
+// ROTTA /api CON DOCUMENTAZIONE
 // ============================================================
 app.get('/api', (req, res) => {
     res.json({
@@ -85,13 +85,6 @@ app.get('/api', (req, res) => {
 });
 
 // ============================================================
-// ROUTE PER IL FRONTEND (solo se il file index.html esiste)
-// ============================================================
-// app.get('/', (req, res) => {
-//     res.sendFile(path.join(__dirname, 'public', 'index.html'));
-// });
-
-// ============================================================
 // API ROUTES
 // ============================================================
 app.use('/api/auth', authRoutes);
@@ -122,12 +115,26 @@ app.listen(PORT, async () => {
         await sequelize.authenticate();
         console.log('✅ Database connected');
  
-        // 🔥 FORZA LA CREAZIONE DELLE TABELLE
-        await sequelize.sync({ force: true });
-        console.log('✅ Tabelle create (force: true)');
+        // ============================================================
+        // 🔥 NUOVA LOGICA: PRESERVA I DATI SE POSSIBILE
+        // ============================================================
+        try {
+            // Prova prima con alter: true (preserva i dati)
+            await sequelize.sync({ alter: true });
+            console.log('✅ Tabelle sincronizzate con alter:true (dati preservati)');
+            console.log('📊 I dati esistenti sono stati mantenuti.');
+        } catch (syncError) {
+            console.warn('⚠️ alter:true fallito, provo con force:true...');
+            console.warn('Motivo:', syncError.message);
+            
+            // Se alter fallisce, usa force come ultima risorsa
+            await sequelize.sync({ force: true });
+            console.log('✅ Tabelle ricreate con force:true (dati persi, ma app funzionante)');
+            console.log('⚠️ ATTENZIONE: Tutti i dati sono stati cancellati e ricreati.');
+        }
 
-// 🔥 Forzato il deploy per Render
     } catch (error) {
         console.error('❌ Database connection error:', error.message);
+        console.error('❌ Dettaglio:', error);
     }
 });
