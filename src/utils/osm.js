@@ -1,5 +1,5 @@
 // ============================================================
-// UTILITY PER OPENSTREETMAP - VERSIONE MIGLIORATA
+// UTILITY PER OPENSTREETMAP - VERSIONE CON LUOGHI REALI
 // ============================================================
 
 /**
@@ -57,11 +57,10 @@ function isSafeLandmark(landmark) {
 }
 
 /**
- * 🔥 RICERCA AMPIA SU OPENSTREETMAP (con fallback di sicurezza)
+ * 🔥 RICERCA AMPIA SU OPENSTREETMAP
  */
 async function searchOpenStreetMap(lat, lng, radius = 5000, maxResults = 10) {
     try {
-        // Query Overpass più ampia
         const overpassQuery = `
             [out:json];
             (
@@ -97,7 +96,6 @@ async function searchOpenStreetMap(lat, lng, radius = 5000, maxResults = 10) {
             const landmarks = data.elements
                 .filter(el => el.tags && el.tags.name)
                 .map(el => {
-                    // Per i way, usa il centro approssimativo
                     let lat = el.lat;
                     let lon = el.lon;
                     if (el.center) {
@@ -112,7 +110,7 @@ async function searchOpenStreetMap(lat, lng, radius = 5000, maxResults = 10) {
                         category: getCategoryFromTags(el.tags)
                     };
                 })
-                .filter(el => el.lat && el.lon) // Filtra quelli senza coordinate
+                .filter(el => el.lat && el.lon)
                 .filter((el, index, self) => 
                     index === self.findIndex(e => e.name === el.name)
                 )
@@ -132,7 +130,7 @@ async function searchOpenStreetMap(lat, lng, radius = 5000, maxResults = 10) {
 }
 
 /**
- * 🔥 RICERCA CON NOMINATIM (secondo tentativo)
+ * 🔥 RICERCA CON NOMINATIM
  */
 async function searchNominatim(lat, lng, maxResults = 8) {
     try {
@@ -182,72 +180,6 @@ async function searchNominatim(lat, lng, maxResults = 8) {
         console.error('❌ Errore Nominatim:', error.message);
         return [];
     }
-}
-
-/**
- * 🗺️ OTTIENE I LUOGHI ICONICI (con ricerche multiple)
- */
-export async function getCityLandmarks(lat, lng, radius = 3000) {
-    console.log(`📍 Ricerca luoghi per: ${lat}, ${lng}`);
-    
-    // ============================================================
-    // TENTATIVO 1: Overpass API (ricerca estesa)
-    // ============================================================
-    let landmarks = await searchOpenStreetMap(lat, lng, radius, 10);
-    
-    if (landmarks.length >= 5) {
-        return landmarks.slice(0, 5);
-    }
-    
-    // ============================================================
-    // TENTATIVO 2: Overpass con raggio maggiore
-    // ============================================================
-    if (landmarks.length < 5) {
-        console.log(`🔍 Trovati solo ${landmarks.length} luoghi, aumento il raggio a 10km...`);
-        landmarks = await searchOpenStreetMap(lat, lng, 10000, 10);
-        if (landmarks.length >= 5) {
-            return landmarks.slice(0, 5);
-        }
-    }
-    
-    // ============================================================
-    // TENTATIVO 3: Nominatim
-    // ============================================================
-    if (landmarks.length < 3) {
-        console.log('🔍 Provo con Nominatim...');
-        const nomLandmarks = await searchNominatim(lat, lng, 10);
-        if (nomLandmarks.length > landmarks.length) {
-            landmarks = nomLandmarks;
-        }
-        if (landmarks.length >= 5) {
-            return landmarks.slice(0, 5);
-        }
-    }
-    
-    // ============================================================
-    // TENTATIVO 4: Luoghi predefiniti per città (Ivrea, Torino, ecc.)
-    // ============================================================
-    if (landmarks.length < 3) {
-        console.log('⚠️ Uso luoghi predefiniti per città...');
-        const defaultLandmarks = getDefaultLandmarksForCity(lat, lng);
-        if (defaultLandmarks.length > 0) {
-            return defaultLandmarks;
-        }
-    }
-    
-    // ============================================================
-    // ULTIMA SPIAGGIA: Luoghi reali da OpenStreetMap (anche se pochi)
-    // ============================================================
-    if (landmarks.length > 0) {
-        console.log(`⚠️ Trovati solo ${landmarks.length} luoghi, ma li uso comunque.`);
-        return landmarks;
-    }
-    
-    // ============================================================
-    // FALLBACK FINALE: Luoghi generici (MAI PIÙ CASUALI!)
-    // ============================================================
-    console.log('⚠️ Nessun luogo trovato, uso luoghi di sicurezza...');
-    return getSafeFallbackLandmarks(lat, lng);
 }
 
 /**
@@ -304,17 +236,97 @@ function getDefaultLandmarksForCity(lat, lng) {
 }
 
 /**
- * 🛡️ FALLBACK DI SICUREZZA (MAI PIÙ CASUALI!)
+ * 🛡️ FALLBACK DI SICUREZZA - USA SOLO LUOGHI REALI!
  */
 function getSafeFallbackLandmarks(lat, lng) {
-    // Usa coordinate fisse ma SIGNIFICATIVE (non casuali)
-    return [
-        { name: '🏛️ Piazza Principale', lat: lat + 0.002, lon: lng + 0.002, type: 'tourism', category: 'souvenir' },
-        { name: '⛪ Chiesa del Paese', lat: lat - 0.002, lon: lng + 0.001, type: 'place_of_worship', category: 'biglietto' },
-        { name: '🌳 Parco Pubblico', lat: lat + 0.001, lon: lng - 0.002, type: 'park', category: 'souvenir' },
-        { name: '🏛️ Monumento Storico', lat: lat - 0.001, lon: lng - 0.001, type: 'castle', category: 'libro' },
-        { name: '📖 Biblioteca Civica', lat: lat + 0.003, lon: lng - 0.001, type: 'tourism', category: 'libro' }
+    // Lista di luoghi REALI in Italia con coordinate precise
+    const realPlaces = [
+        { name: '🏛️ Colosseo', lat: 41.8902, lon: 12.4922, type: 'castle', category: 'libro' },
+        { name: '⛪ Basilica di San Pietro', lat: 41.9022, lon: 12.4539, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza San Marco', lat: 45.4343, lon: 12.3388, type: 'tourism', category: 'souvenir' },
+        { name: '🏰 Castello di Gradara', lat: 43.9556, lon: 12.7717, type: 'castle', category: 'libro' },
+        { name: '🏛️ Piazza del Campo', lat: 43.3183, lon: 11.3317, type: 'tourism', category: 'souvenir' },
+        { name: '⛪ Duomo di Firenze', lat: 43.7731, lon: 11.2560, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza dei Miracoli', lat: 43.7231, lon: 10.3966, type: 'tourism', category: 'souvenir' },
+        { name: '🏰 Castello di Brescia', lat: 45.5416, lon: 10.2117, type: 'castle', category: 'libro' },
+        { name: '🏛️ Palazzo Ducale di Urbino', lat: 43.7244, lon: 12.6365, type: 'museum', category: 'altro' },
+        { name: '🌳 Parco del Valentino', lat: 45.0550, lon: 7.6860, type: 'park', category: 'souvenir' },
+        { name: '🏛️ Mole Antonelliana', lat: 45.0689, lon: 7.6934, type: 'tourism', category: 'souvenir' },
+        { name: '⛪ Basilica di Sant\'Ambrogio', lat: 45.4623, lon: 9.1755, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏰 Castello Sforzesco', lat: 45.4705, lon: 9.1791, type: 'castle', category: 'libro' },
+        { name: '🏛️ Galleria Vittorio Emanuele', lat: 45.4658, lon: 9.1904, type: 'tourism', category: 'souvenir' },
+        { name: '🌳 Giardini della Biennale', lat: 45.4289, lon: 12.3572, type: 'park', category: 'souvenir' },
+        { name: '🏛️ Palazzo Reale di Napoli', lat: 40.8364, lon: 14.2492, type: 'castle', category: 'libro' },
+        { name: '⛪ Duomo di Amalfi', lat: 40.6343, lon: 14.6026, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🏛️ Piazza Armerina', lat: 37.3834, lon: 14.3697, type: 'tourism', category: 'souvenir' },
+        { name: '🏰 Castello di Caccamo', lat: 37.9333, lon: 13.6667, type: 'castle', category: 'libro' },
+        { name: '🌳 Parco Nazionale del Gargano', lat: 41.7667, lon: 15.8833, type: 'park', category: 'souvenir' }
     ];
+
+    // Trova i luoghi più vicini all'utente
+    const sorted = realPlaces
+        .map(place => ({
+            ...place,
+            distance: calculateDistance(lat, lng, place.lat, place.lon)
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 5);
+
+    console.log(`📍 Usati ${sorted.length} luoghi reali come fallback`);
+    return sorted;
+}
+
+/**
+ * 🗺️ OTTIENE I LUOGHI ICONICI
+ */
+export async function getCityLandmarks(lat, lng, radius = 3000) {
+    console.log(`📍 Ricerca luoghi per: ${lat}, ${lng}`);
+    
+    // Tentativo 1: Overpass API
+    let landmarks = await searchOpenStreetMap(lat, lng, radius, 10);
+    if (landmarks.length >= 5) {
+        return landmarks.slice(0, 5);
+    }
+    
+    // Tentativo 2: Overpass con raggio maggiore
+    if (landmarks.length < 5) {
+        console.log(`🔍 Trovati solo ${landmarks.length} luoghi, aumento il raggio a 10km...`);
+        landmarks = await searchOpenStreetMap(lat, lng, 10000, 10);
+        if (landmarks.length >= 5) {
+            return landmarks.slice(0, 5);
+        }
+    }
+    
+    // Tentativo 3: Nominatim
+    if (landmarks.length < 3) {
+        console.log('🔍 Provo con Nominatim...');
+        const nomLandmarks = await searchNominatim(lat, lng, 10);
+        if (nomLandmarks.length > landmarks.length) {
+            landmarks = nomLandmarks;
+        }
+        if (landmarks.length >= 5) {
+            return landmarks.slice(0, 5);
+        }
+    }
+    
+    // Tentativo 4: Luoghi predefiniti per città
+    if (landmarks.length < 3) {
+        console.log('⚠️ Uso luoghi predefiniti per città...');
+        const defaultLandmarks = getDefaultLandmarksForCity(lat, lng);
+        if (defaultLandmarks.length > 0) {
+            return defaultLandmarks;
+        }
+    }
+    
+    // Ultima spiaggia: luoghi reali dal database di fallback
+    if (landmarks.length > 0) {
+        console.log(`⚠️ Trovati solo ${landmarks.length} luoghi, ma li uso comunque.`);
+        return landmarks;
+    }
+    
+    // Fallback finale: SOLO LUOGHI REALI!
+    console.log('⚠️ Nessun luogo trovato, uso luoghi reali di fallback...');
+    return getSafeFallbackLandmarks(lat, lng);
 }
 
 // ============================================================
