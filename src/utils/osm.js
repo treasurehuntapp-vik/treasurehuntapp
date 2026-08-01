@@ -1,5 +1,5 @@
 // ============================================================
-// UTILITY PER OPENSTREETMAP
+// UTILITY PER OPENSTREETMAP - VERSIONE MIGLIORATA
 // ============================================================
 
 /**
@@ -22,10 +22,9 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
  * Verifica se un luogo è sicuro per un tesoro
  */
 function isSafeLandmark(landmark) {
-    const name = landmark.name?.toLowerCase() || '';
+    const name = (landmark.name || '').toLowerCase();
     const type = landmark.type || '';
     
-    // Parole che indicano luoghi NON sicuri o PRIVATI
     const unsafeKeywords = [
         'hotel', 'ristorante', 'bar', 'caffè', 'negozio', 'supermercato',
         'scuola', 'liceo', 'istituto', 'università', 'asilo',
@@ -41,7 +40,6 @@ function isSafeLandmark(landmark) {
         'cimitero', 'obitorio'
     ];
     
-    // Controlla se il nome contiene parole proibite
     for (const keyword of unsafeKeywords) {
         if (name.includes(keyword)) {
             console.log(`⚠️ Escluso: ${landmark.name} (contiene "${keyword}")`);
@@ -49,7 +47,6 @@ function isSafeLandmark(landmark) {
         }
     }
     
-    // Controlla il tipo
     const unsafeTypes = ['hotel', 'restaurant', 'shop', 'school', 'hospital', 'bank', 'post_office'];
     if (unsafeTypes.includes(type)) {
         console.log(`⚠️ Escluso: ${landmark.name} (tipo "${type}")`);
@@ -60,86 +57,11 @@ function isSafeLandmark(landmark) {
 }
 
 /**
- * Luoghi predefiniti per Ivrea (ULTIMA SPIAGGIA)
+ * 🔥 RICERCA AMPIA SU OPENSTREETMAP (con fallback di sicurezza)
  */
-function getIvreaLandmarks() {
-    return [
-        { name: '🏰 Castello di Ivrea', lat: 45.46875, lon: 7.88430, type: 'castle', category: 'libro' },
-        { name: '🌉 Ponte Vecchio', lat: 45.46445, lon: 7.87940, type: 'tourism', category: 'giocattolo' },
-        { name: '⛪ Cattedrale di Ivrea', lat: 45.46715, lon: 7.88395, type: 'place_of_worship', category: 'biglietto' },
-        { name: '🏛️ Piazza Ottinetti', lat: 45.46750, lon: 7.88280, type: 'tourism', category: 'souvenir' },
-        { name: '🏭 Museo Olivetti', lat: 45.46820, lon: 7.88590, type: 'museum', category: 'altro' },
-        { name: '🌳 Parco della Polveriera', lat: 45.46300, lon: 7.88200, type: 'park', category: 'souvenir' },
-        { name: '🎭 Teatro Giacosa', lat: 45.46650, lon: 7.88450, type: 'tourism', category: 'libro' }
-    ];
-}
-
-/**
- * Luoghi predefiniti per Torino (ULTIMA SPIAGGIA)
- */
-function getTorinoLandmarks() {
-    return [
-        { name: '🏛️ Piazza Castello', lat: 45.07030, lon: 7.68690, type: 'tourism', category: 'libro' },
-        { name: '🏛️ Museo Egizio', lat: 45.06840, lon: 7.68430, type: 'museum', category: 'altro' },
-        { name: '🏛️ Palazzo Reale', lat: 45.07160, lon: 7.68600, type: 'castle', category: 'libro' },
-        { name: '⛪ Duomo di Torino', lat: 45.07310, lon: 7.68540, type: 'place_of_worship', category: 'biglietto' },
-        { name: '🌳 Parco del Valentino', lat: 45.05500, lon: 7.68600, type: 'park', category: 'souvenir' },
-        { name: '🏛️ Mole Antonelliana', lat: 45.06890, lon: 7.69340, type: 'tourism', category: 'souvenir' },
-        { name: '🏛️ Porta Palatina', lat: 45.07500, lon: 7.68440, type: 'historic', category: 'libro' }
-    ];
-}
-
-/**
- * 🔥 LUOGHI DI DEFAULT MIGLIORATI (se OpenStreetMap non risponde)
- */
-function getDefaultLandmarks(lat, lng) {
-    const offset = 0.002;
-    
-    // Nomi specifici per città italiane
-    const cityNames = [
-        'Torre Antica', 'Giardino Segreto', 'Museo Civico', 'Piazza Centrale', 'Chiesa Vecchia',
-        'Palazzo Storico', 'Villa Nobiliare', 'Teatro Comunale', 'Biblioteca Antica', 'Giardino Botanico'
-    ];
-    
-    const types = ['castle', 'park', 'museum', 'tourism', 'place_of_worship'];
-    const categories = ['libro', 'giocattolo', 'biglietto', 'souvenir', 'altro'];
-    const emojis = ['🏰', '🌳', '🏛️', '📍', '⛪'];
-    
-    const landmarks = [];
-    
-    for (let i = 0; i < 5; i++) {
-        const angle = (i / 5) * 2 * Math.PI;
-        const dist = offset * (1 + i * 0.2);
-        const latOffset = dist * Math.cos(angle);
-        const lngOffset = dist * Math.sin(angle);
-        
-        // Scegli un nome a caso dalla lista
-        const nameIndex = (i + Math.floor(Math.random() * 3)) % cityNames.length;
-        const typeIndex = i % types.length;
-        
-        landmarks.push({
-            name: `${emojis[i % emojis.length]} ${cityNames[nameIndex]}`,
-            lat: lat + latOffset,
-            lon: lng + lngOffset,
-            type: types[typeIndex],
-            category: categories[i % categories.length]
-        });
-    }
-    
-    console.log('📍 Generati luoghi di default con nomi specifici');
-    return landmarks;
-}
-
-/**
- * Ottiene i luoghi iconici di una città da OpenStreetMap
- * PRIMA prova OpenStreetMap, POI usa i predefiniti come ultima spiaggia
- */
-export async function getCityLandmarks(lat, lng, radius = 3000) {
+async function searchOpenStreetMap(lat, lng, radius = 5000, maxResults = 10) {
     try {
-        // ============================================================
-        // TENTATIVO 1: Overpass API (PRIMA SEMPRE)
-        // ============================================================
-        console.log('🔄 Richiesta a OpenStreetMap (Overpass)...');
+        // Query Overpass più ampia
         const overpassQuery = `
             [out:json];
             (
@@ -155,6 +77,10 @@ export async function getCityLandmarks(lat, lng, radius = 3000) {
                 node["leisure"="garden"](around:${radius},${lat},${lng});
                 node["amenity"="theatre"](around:${radius},${lat},${lng});
                 node["amenity"="cinema"](around:${radius},${lat},${lng});
+                way["historic"](around:${radius},${lat},${lng});
+                way["tourism"](around:${radius},${lat},${lng});
+                relation["historic"](around:${radius},${lat},${lng});
+                relation["tourism"](around:${radius},${lat},${lng});
             );
             out body;
         `;
@@ -170,40 +96,56 @@ export async function getCityLandmarks(lat, lng, radius = 3000) {
             const data = await response.json();
             const landmarks = data.elements
                 .filter(el => el.tags && el.tags.name)
-                .map(el => ({
-                    name: el.tags.name,
-                    lat: el.lat,
-                    lon: el.lon,
-                    type: getTypeFromTags(el.tags),
-                    category: getCategoryFromTags(el.tags)
-                }))
+                .map(el => {
+                    // Per i way, usa il centro approssimativo
+                    let lat = el.lat;
+                    let lon = el.lon;
+                    if (el.center) {
+                        lat = el.center.lat;
+                        lon = el.center.lon;
+                    }
+                    return {
+                        name: el.tags.name,
+                        lat: lat || el.lat,
+                        lon: lon || el.lon,
+                        type: getTypeFromTags(el.tags),
+                        category: getCategoryFromTags(el.tags)
+                    };
+                })
+                .filter(el => el.lat && el.lon) // Filtra quelli senza coordinate
                 .filter((el, index, self) => 
                     index === self.findIndex(e => e.name === el.name)
                 )
-                // 🔥 FILTRO DI SICUREZZA: esclude hotel, ristoranti, negozi, ecc.
                 .filter(el => isSafeLandmark(el))
-                .slice(0, 8);
+                .slice(0, maxResults);
 
             if (landmarks.length > 0) {
                 console.log(`📍 Trovati ${landmarks.length} luoghi da OpenStreetMap (Overpass)`);
                 return landmarks;
             }
         }
+        return [];
+    } catch (error) {
+        console.error('❌ Errore Overpass:', error.message);
+        return [];
+    }
+}
 
-        // ============================================================
-        // TENTATIVO 2: Nominatim (SECONDO)
-        // ============================================================
-        console.log('🔄 Overpass non ha trovato luoghi, provo con Nominatim...');
-        const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=monumento+chiesa+castello+museo+parco&bounded=1&viewbox=${lng - 0.05},${lat - 0.05},${lng + 0.05},${lat + 0.05}&limit=10&accept-language=it`;
+/**
+ * 🔥 RICERCA CON NOMINATIM (secondo tentativo)
+ */
+async function searchNominatim(lat, lng, maxResults = 8) {
+    try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=monumento+chiesa+castello+museo+parco+attrazione&bounded=1&viewbox=${lng - 0.1},${lat - 0.1},${lng + 0.1},${lat + 0.1}&limit=15&accept-language=it`;
         
-        const nomResponse = await fetch(nominatimUrl, {
+        const response = await fetch(url, {
             headers: {
                 'User-Agent': 'CacciaAlTesoro/1.0 (https://github.com/treasurehuntapp-vik/treasurehuntapp)'
             }
         });
 
-        if (nomResponse.ok) {
-            const data = await nomResponse.json();
+        if (response.ok) {
+            const data = await response.json();
             const landmarks = data
                 .filter(el => {
                     const name = el.display_name || '';
@@ -227,51 +169,158 @@ export async function getCityLandmarks(lat, lng, radius = 3000) {
                         category: 'libro'
                     };
                 })
-                .filter(el => isSafeLandmark(el)) // 🔥 FILTRO DI SICUREZZA
-                .slice(0, 5);
+                .filter(el => isSafeLandmark(el))
+                .slice(0, maxResults);
 
             if (landmarks.length > 0) {
                 console.log(`📍 Trovati ${landmarks.length} luoghi da Nominatim`);
                 return landmarks;
             }
         }
-
-        // ============================================================
-        // TENTATIVO 3: Luoghi predefiniti (ULTIMA SPIAGGIA)
-        // ============================================================
-        console.log('⚠️ OpenStreetMap non ha risposto, uso luoghi predefiniti...');
-        
-        // Controllo per Ivrea
-        const ivreaLat = 45.4660;
-        const ivreaLng = 7.8830;
-        const distanceToIvrea = calculateDistance(lat, lng, ivreaLat, ivreaLng);
-        if (distanceToIvrea < 15000) {
-            console.log('📍 Rilevata Ivrea, uso luoghi predefiniti...');
-            return getIvreaLandmarks();
-        }
-        
-        // Controllo per Torino
-        const torinoLat = 45.0703;
-        const torinoLng = 7.6869;
-        const distanceToTorino = calculateDistance(lat, lng, torinoLat, torinoLng);
-        if (distanceToTorino < 15000) {
-            console.log('📍 Rilevata Torino, uso luoghi predefiniti...');
-            return getTorinoLandmarks();
-        }
-
-        // Fallback generico - ora con nomi specifici!
-        console.log('📍 Genero luoghi di default con nomi specifici...');
-        return getDefaultLandmarks(lat, lng);
-
+        return [];
     } catch (error) {
-        console.error('❌ Errore OpenStreetMap:', error);
-        return getDefaultLandmarks(lat, lng);
+        console.error('❌ Errore Nominatim:', error.message);
+        return [];
     }
 }
 
 /**
- * Determina il tipo in base ai tag OpenStreetMap
+ * 🗺️ OTTIENE I LUOGHI ICONICI (con ricerche multiple)
  */
+export async function getCityLandmarks(lat, lng, radius = 3000) {
+    console.log(`📍 Ricerca luoghi per: ${lat}, ${lng}`);
+    
+    // ============================================================
+    // TENTATIVO 1: Overpass API (ricerca estesa)
+    // ============================================================
+    let landmarks = await searchOpenStreetMap(lat, lng, radius, 10);
+    
+    if (landmarks.length >= 5) {
+        return landmarks.slice(0, 5);
+    }
+    
+    // ============================================================
+    // TENTATIVO 2: Overpass con raggio maggiore
+    // ============================================================
+    if (landmarks.length < 5) {
+        console.log(`🔍 Trovati solo ${landmarks.length} luoghi, aumento il raggio a 10km...`);
+        landmarks = await searchOpenStreetMap(lat, lng, 10000, 10);
+        if (landmarks.length >= 5) {
+            return landmarks.slice(0, 5);
+        }
+    }
+    
+    // ============================================================
+    // TENTATIVO 3: Nominatim
+    // ============================================================
+    if (landmarks.length < 3) {
+        console.log('🔍 Provo con Nominatim...');
+        const nomLandmarks = await searchNominatim(lat, lng, 10);
+        if (nomLandmarks.length > landmarks.length) {
+            landmarks = nomLandmarks;
+        }
+        if (landmarks.length >= 5) {
+            return landmarks.slice(0, 5);
+        }
+    }
+    
+    // ============================================================
+    // TENTATIVO 4: Luoghi predefiniti per città (Ivrea, Torino, ecc.)
+    // ============================================================
+    if (landmarks.length < 3) {
+        console.log('⚠️ Uso luoghi predefiniti per città...');
+        const defaultLandmarks = getDefaultLandmarksForCity(lat, lng);
+        if (defaultLandmarks.length > 0) {
+            return defaultLandmarks;
+        }
+    }
+    
+    // ============================================================
+    // ULTIMA SPIAGGIA: Luoghi reali da OpenStreetMap (anche se pochi)
+    // ============================================================
+    if (landmarks.length > 0) {
+        console.log(`⚠️ Trovati solo ${landmarks.length} luoghi, ma li uso comunque.`);
+        return landmarks;
+    }
+    
+    // ============================================================
+    // FALLBACK FINALE: Luoghi generici (MAI PIÙ CASUALI!)
+    // ============================================================
+    console.log('⚠️ Nessun luogo trovato, uso luoghi di sicurezza...');
+    return getSafeFallbackLandmarks(lat, lng);
+}
+
+/**
+ * 🏙️ LUOGHI PREDEFINITI PER CITTÀ ITALIANE
+ */
+function getDefaultLandmarksForCity(lat, lng) {
+    const cities = [
+        {
+            name: 'Ivrea',
+            center: { lat: 45.4660, lng: 7.8830 },
+            landmarks: [
+                { name: '🏰 Castello di Ivrea', lat: 45.46875, lon: 7.88430, type: 'castle', category: 'libro' },
+                { name: '🌉 Ponte Vecchio', lat: 45.46445, lon: 7.87940, type: 'tourism', category: 'giocattolo' },
+                { name: '⛪ Cattedrale di Ivrea', lat: 45.46715, lon: 7.88395, type: 'place_of_worship', category: 'biglietto' },
+                { name: '🏛️ Piazza Ottinetti', lat: 45.46750, lon: 7.88280, type: 'tourism', category: 'souvenir' },
+                { name: '🏭 Museo Olivetti', lat: 45.46820, lon: 7.88590, type: 'museum', category: 'altro' },
+                { name: '🌳 Parco della Polveriera', lat: 45.46300, lon: 7.88200, type: 'park', category: 'souvenir' }
+            ]
+        },
+        {
+            name: 'Torino',
+            center: { lat: 45.0703, lng: 7.6869 },
+            landmarks: [
+                { name: '🏛️ Piazza Castello', lat: 45.07030, lon: 7.68690, type: 'tourism', category: 'libro' },
+                { name: '🏛️ Museo Egizio', lat: 45.06840, lon: 7.68430, type: 'museum', category: 'altro' },
+                { name: '🏛️ Palazzo Reale', lat: 45.07160, lon: 7.68600, type: 'castle', category: 'libro' },
+                { name: '⛪ Duomo di Torino', lat: 45.07310, lon: 7.68540, type: 'place_of_worship', category: 'biglietto' },
+                { name: '🌳 Parco del Valentino', lat: 45.05500, lon: 7.68600, type: 'park', category: 'souvenir' },
+                { name: '🏛️ Mole Antonelliana', lat: 45.06890, lon: 7.69340, type: 'tourism', category: 'souvenir' }
+            ]
+        },
+        {
+            name: 'Milano',
+            center: { lat: 45.4642, lng: 9.1900 },
+            landmarks: [
+                { name: '🏛️ Duomo di Milano', lat: 45.4641, lon: 9.1919, type: 'place_of_worship', category: 'biglietto' },
+                { name: '🏛️ Galleria Vittorio Emanuele', lat: 45.4658, lon: 9.1904, type: 'tourism', category: 'souvenir' },
+                { name: '🏰 Castello Sforzesco', lat: 45.4705, lon: 9.1791, type: 'castle', category: 'libro' },
+                { name: '🎭 Teatro alla Scala', lat: 45.4670, lon: 9.1885, type: 'tourism', category: 'libro' },
+                { name: '🌳 Parco Sempione', lat: 45.4740, lon: 9.1760, type: 'park', category: 'souvenir' }
+            ]
+        }
+    ];
+    
+    for (const city of cities) {
+        const distance = calculateDistance(lat, lng, city.center.lat, city.center.lng);
+        if (distance < 15000) {
+            console.log(`📍 Rilevata ${city.name}, uso luoghi predefiniti...`);
+            return city.landmarks;
+        }
+    }
+    
+    return [];
+}
+
+/**
+ * 🛡️ FALLBACK DI SICUREZZA (MAI PIÙ CASUALI!)
+ */
+function getSafeFallbackLandmarks(lat, lng) {
+    // Usa coordinate fisse ma SIGNIFICATIVE (non casuali)
+    return [
+        { name: '🏛️ Piazza Principale', lat: lat + 0.002, lon: lng + 0.002, type: 'tourism', category: 'souvenir' },
+        { name: '⛪ Chiesa del Paese', lat: lat - 0.002, lon: lng + 0.001, type: 'place_of_worship', category: 'biglietto' },
+        { name: '🌳 Parco Pubblico', lat: lat + 0.001, lon: lng - 0.002, type: 'park', category: 'souvenir' },
+        { name: '🏛️ Monumento Storico', lat: lat - 0.001, lon: lng - 0.001, type: 'castle', category: 'libro' },
+        { name: '📖 Biblioteca Civica', lat: lat + 0.003, lon: lng - 0.001, type: 'tourism', category: 'libro' }
+    ];
+}
+
+// ============================================================
+// FUNZIONI DI SUPPORTO
+// ============================================================
+
 function getTypeFromTags(tags) {
     if (tags.historic === 'castle') return 'castle';
     if (tags.historic === 'church') return 'place_of_worship';
@@ -285,9 +334,6 @@ function getTypeFromTags(tags) {
     return 'default';
 }
 
-/**
- * Determina la categoria in base ai tag OpenStreetMap
- */
 function getCategoryFromTags(tags) {
     if (tags.historic === 'castle') return 'libro';
     if (tags.historic === 'church') return 'biglietto';
@@ -302,39 +348,27 @@ function getCategoryFromTags(tags) {
 }
 
 /**
- * Ottiene il nome della città dalle coordinate (reverse geocoding)
+ * Ottiene il nome della città dalle coordinate
  */
 export async function getCityFromCoordinates(lat, lng) {
     try {
         const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=it`;
-        
         const response = await fetch(url, {
             headers: {
                 'User-Agent': 'CacciaAlTesoro/1.0 (https://github.com/treasurehuntapp-vik/treasurehuntapp)'
             }
         });
         
-        if (!response.ok) {
-            console.error('❌ Errore reverse geocoding:', response.status);
-            return 'Citta Sconosciuta';
-        }
-
+        if (!response.ok) return 'Città Sconosciuta';
         const data = await response.json();
         
         if (data.address) {
-            const city = data.address.city || 
-                        data.address.town || 
-                        data.address.village || 
-                        data.address.municipality ||
-                        data.address.county ||
-                        'Citta Sconosciuta';
-            return city;
+            return data.address.city || data.address.town || data.address.village || 
+                   data.address.municipality || data.address.county || 'Città Sconosciuta';
         }
-
-        return 'Citta Sconosciuta';
-
+        return 'Città Sconosciuta';
     } catch (error) {
         console.error('❌ Errore reverse geocoding:', error);
-        return 'Citta Sconosciuta';
+        return 'Città Sconosciuta';
     }
 }
