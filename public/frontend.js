@@ -7,10 +7,6 @@ const API_URL = 'https://caccia-tesoro-backend.onrender.com/api';
 let currentToken = null;
 let currentUser = null;
 
-// Variabili per il caricamento foto
-let hidePhotoFile = null;
-let hidePhotoDataUrl = null;
-
 // ============================================================
 // 1. REGISTRAZIONE
 // ============================================================
@@ -907,159 +903,6 @@ function addRealTreasureMarker(treasure) {
 }
 
 // ============================================================
-// 🔥 FIX CARICAMENTO FOTO - Solo questa parte è nuova!
-// ============================================================
-
-// 🔥 FUNZIONE CORRETTA per aprire il selettore di file
-function triggerFileInput() {
-    console.log('📸 triggerFileInput chiamato');
-    
-    const input = document.getElementById('hide-photo-input');
-    if (!input) {
-        console.error('❌ Input file non trovato');
-        showToast('⚠️ Errore: input non trovato');
-        return;
-    }
-    
-    // 🔥 FIX: Reset del valore prima di aprire
-    input.value = '';
-    input.click();
-    console.log('📸 File input aperto (resettato)');
-}
-
-// Funzione per gestire la selezione del file
-function handleFileSelect(e) {
-    console.log('📸 Evento change catturato!');
-    
-    const input = e.target;
-    const file = input.files[0];
-    
-    if (!file) {
-        console.log('⚠️ Nessun file selezionato');
-        return;
-    }
-    
-    console.log('📸 File selezionato:', file.name, file.size, file.type);
-    
-    if (file.size > 5 * 1024 * 1024) {
-        showToast('❌ La foto è troppo grande (max 5MB)');
-        input.value = '';
-        return;
-    }
-    
-    if (!file.type.startsWith('image/')) {
-        showToast('❌ Il file deve essere un\'immagine');
-        input.value = '';
-        return;
-    }
-    
-    hidePhotoFile = file;
-    console.log('📸 File salvato in hidePhotoFile');
-    
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        console.log('📸 FileReader completato');
-        hidePhotoDataUrl = event.target.result;
-        
-        const img = document.getElementById('hide-photo-image');
-        const placeholder = document.getElementById('hide-photo-placeholder');
-        const preview = document.getElementById('hide-photo-preview');
-        const removeBtn = document.getElementById('hide-photo-remove');
-        
-        if (img) {
-            img.src = event.target.result;
-            img.style.display = 'block';
-        }
-        if (placeholder) {
-            placeholder.style.display = 'none';
-        }
-        if (preview) {
-            preview.classList.add('has-image');
-        }
-        if (removeBtn) {
-            removeBtn.style.display = 'block';
-        }
-        
-        showToast('✅ Foto caricata!');
-        console.log('📸 Anteprima visualizzata');
-    };
-    
-    reader.onerror = function() {
-        console.error('❌ Errore FileReader');
-        showToast('❌ Errore nella lettura del file');
-    };
-    
-    reader.readAsDataURL(file);
-    
-    input.value = '';
-}
-
-// Inizializza il listener per il cambio file
-function initHidePhoto() {
-    const input = document.getElementById('hide-photo-input');
-    if (!input) {
-        console.error('❌ Input file non trovato');
-        return;
-    }
-    
-    input.removeEventListener('change', handleFileSelect);
-    input.addEventListener('change', handleFileSelect);
-    console.log('📸 Input file inizializzato correttamente');
-}
-
-// Rimuove la foto selezionata
-function clearHidePhoto() {
-    console.log('🗑️ Rimozione foto');
-    
-    hidePhotoFile = null;
-    hidePhotoDataUrl = null;
-    
-    const img = document.getElementById('hide-photo-image');
-    const placeholder = document.getElementById('hide-photo-placeholder');
-    const preview = document.getElementById('hide-photo-preview');
-    const removeBtn = document.getElementById('hide-photo-remove');
-    const input = document.getElementById('hide-photo-input');
-    
-    if (img) {
-        img.src = '';
-        img.style.display = 'none';
-    }
-    if (placeholder) {
-        placeholder.style.display = 'block';
-    }
-    if (preview) {
-        preview.classList.remove('has-image');
-    }
-    if (removeBtn) {
-        removeBtn.style.display = 'none';
-    }
-    if (input) {
-        input.value = '';
-    }
-    
-    showToast('🗑️ Foto rimossa');
-}
-
-// Salva la foto e passa allo step 2
-function saveHidePhotoAndGoToStep2() {
-    console.log('📸 Verifica foto:', hidePhotoFile ? '✅ File presente' : '❌ NESSUN FILE');
-    
-    if (!hidePhotoFile) {
-        showToast('⚠️ Carica una foto dell\'oggetto');
-        return;
-    }
-    
-    if (!window.tempTreasureData) {
-        window.tempTreasureData = {};
-    }
-    window.tempTreasureData.photoFile = hidePhotoFile;
-    window.tempTreasureData.photoDataUrl = hidePhotoDataUrl;
-    
-    console.log('📸 Dati foto salvati in tempTreasureData');
-    goToStep(2);
-}
-
-// ============================================================
 // ESPORTA FUNZIONI (per uso globale)
 // ============================================================
 window.registerUser = registerUser;
@@ -1099,13 +942,6 @@ window.generateStartersForUser = generateStartersForUser;
 window.clearTreasureMarkers = clearTreasureMarkers;
 window.addRealTreasureMarker = addRealTreasureMarker;
 
-// 🔥 CARICAMENTO FOTO - ESPORTA LE NUOVE FUNZIONI
-window.triggerFileInput = triggerFileInput;
-window.handleFileSelect = handleFileSelect;
-window.initHidePhoto = initHidePhoto;
-window.clearHidePhoto = clearHidePhoto;
-window.saveHidePhotoAndGoToStep2 = saveHidePhotoAndGoToStep2;
-
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
 console.log('  - registerUser(), loginUser()');
@@ -1115,5 +951,4 @@ console.log('  - handleLogin(), handleRegister(), handleLogout()');
 console.log('  - startApp() - Avvia la mappa e genera starter');
 console.log('  - loadRealTreasures() - Carica i tesori');
 console.log('  - generateStartersForUser() - Genera tesori starter');
-console.log('  - triggerFileInput() - Carica foto (FIX applicato!)');
 console.log('  - AudioSystem - Gestione audio');
