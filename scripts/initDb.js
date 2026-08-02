@@ -1,26 +1,18 @@
 import { sequelize } from '../src/config/database.js';
-import '../src/models/User.js';
-import '../src/models/Treasure.js';
-import '../src/models/Report.js';
-import '../src/models/Notification.js';
-import '../src/models/KarmaTransaction.js';
 
-async function initDatabase() {
-    try {
-        console.log('🔄 Connessione al database...');
-        await sequelize.authenticate();
-        console.log('✅ Database connesso');
+console.log('🔄 Connessione al database...');
 
-        console.log('🔄 Creazione tabelle (force: true)...');
-        await sequelize.sync({ force: true });
-        console.log('✅ Tabelle create con successo!');
-
-        process.exit(0);
-    } catch (error) {
-        console.error('❌ Errore:', error);
-        process.exit(1);
-    }
+try {
+    await sequelize.authenticate();
+    console.log('✅ Database connesso');
+    
+    // 🔥 MODIFICATO: alter: true invece di force: true
+    console.log('🔄 Sincronizzazione tabelle...');
+    await sequelize.sync({ alter: true });
+    console.log('✅ Tabelle sincronizzate (dati preservati)');
+    
+    process.exit(0);
+} catch (error) {
+    console.error('❌ Errore:', error.message);
+    process.exit(1);
 }
-
-initDatabase();
-console.log('✅ Deploy forzato su Render');
