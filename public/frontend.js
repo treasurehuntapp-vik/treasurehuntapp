@@ -7,6 +7,10 @@ const API_URL = 'https://caccia-tesoro-backend.onrender.com/api';
 let currentToken = null;
 let currentUser = null;
 
+// Variabili per il caricamento foto
+let hidePhotoFile = null;
+let hidePhotoDataUrl = null;
+
 // ============================================================
 // 1. REGISTRAZIONE
 // ============================================================
@@ -574,13 +578,164 @@ async function generateStartersForUser(lat, lng) {
 }
 
 // ============================================================
-// 15. START APP - Avvia l'applicazione
+// 15. CARICAMENTO FOTO - VERSIONE CORRETTA
+// ============================================================
+
+// Inizializza il listener per il cambio file
+function initHidePhoto() {
+    const input = document.getElementById('hide-photo-input');
+    if (!input) {
+        console.error('❌ Input file non trovato');
+        return;
+    }
+    
+    input.removeEventListener('change', handleFileSelect);
+    input.addEventListener('change', handleFileSelect);
+    console.log('📸 Input file inizializzato correttamente');
+}
+
+// Gestisce la selezione del file
+function handleFileSelect(e) {
+    console.log('📸 Evento change catturato!');
+    
+    const input = e.target;
+    const file = input.files[0];
+    
+    if (!file) {
+        console.log('⚠️ Nessun file selezionato');
+        return;
+    }
+    
+    console.log('📸 File selezionato:', file.name, file.size, file.type);
+    
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('❌ La foto è troppo grande (max 5MB)');
+        input.value = '';
+        return;
+    }
+    
+    if (!file.type.startsWith('image/')) {
+        showToast('❌ Il file deve essere un\'immagine');
+        input.value = '';
+        return;
+    }
+    
+    hidePhotoFile = file;
+    console.log('📸 File salvato in hidePhotoFile');
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        console.log('📸 FileReader completato');
+        hidePhotoDataUrl = event.target.result;
+        
+        const img = document.getElementById('hide-photo-image');
+        const placeholder = document.getElementById('hide-photo-placeholder');
+        const preview = document.getElementById('hide-photo-preview');
+        const removeBtn = document.getElementById('hide-photo-remove');
+        
+        if (img) {
+            img.src = event.target.result;
+            img.style.display = 'block';
+        }
+        if (placeholder) {
+            placeholder.style.display = 'none';
+        }
+        if (preview) {
+            preview.classList.add('has-image');
+        }
+        if (removeBtn) {
+            removeBtn.style.display = 'block';
+        }
+        
+        showToast('✅ Foto caricata!');
+        console.log('📸 Anteprima visualizzata');
+    };
+    
+    reader.onerror = function() {
+        console.error('❌ Errore FileReader');
+        showToast('❌ Errore nella lettura del file');
+    };
+    
+    reader.readAsDataURL(file);
+    
+    input.value = '';
+}
+
+// 🔥 FUNZIONE CORRETTA - Apre il selettore di file
+function triggerFileInput() {
+    console.log('📸 triggerFileInput chiamato');
+    
+    const input = document.getElementById('hide-photo-input');
+    if (!input) {
+        console.error('❌ Input file non trovato');
+        showToast('⚠️ Errore: input non trovato');
+        return;
+    }
+    
+    input.value = '';
+    input.click();
+    console.log('📸 File input aperto (resettato)');
+}
+
+// Rimuove la foto selezionata
+function clearHidePhoto() {
+    console.log('🗑️ Rimozione foto');
+    
+    hidePhotoFile = null;
+    hidePhotoDataUrl = null;
+    
+    const img = document.getElementById('hide-photo-image');
+    const placeholder = document.getElementById('hide-photo-placeholder');
+    const preview = document.getElementById('hide-photo-preview');
+    const removeBtn = document.getElementById('hide-photo-remove');
+    const input = document.getElementById('hide-photo-input');
+    
+    if (img) {
+        img.src = '';
+        img.style.display = 'none';
+    }
+    if (placeholder) {
+        placeholder.style.display = 'block';
+    }
+    if (preview) {
+        preview.classList.remove('has-image');
+    }
+    if (removeBtn) {
+        removeBtn.style.display = 'none';
+    }
+    if (input) {
+        input.value = '';
+    }
+    
+    showToast('🗑️ Foto rimossa');
+}
+
+// Salva la foto e passa allo step 2
+function saveHidePhotoAndGoToStep2() {
+    console.log('📸 Verifica foto:', hidePhotoFile ? '✅ File presente' : '❌ NESSUN FILE');
+    
+    if (!hidePhotoFile) {
+        showToast('⚠️ Carica una foto dell\'oggetto');
+        return;
+    }
+    
+    if (!window.tempTreasureData) {
+        window.tempTreasureData = {};
+    }
+    window.tempTreasureData.photoFile = hidePhotoFile;
+    window.tempTreasureData.photoDataUrl = hidePhotoDataUrl;
+    
+    console.log('📸 Dati foto salvati in tempTreasureData');
+    goToStep(2);
+}
+
+// ============================================================
+// 16. START APP - Avvia l'applicazione
 // ============================================================
 
 async function startApp() {
     console.log('🚀 Avvio applicazione...');
     
-    // Verifica se l'utente è loggato
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
     
@@ -594,7 +749,6 @@ async function startApp() {
         return;
     }
     
-    // Mostra la schermata della mappa
     const homeScreen = document.getElementById('screen-home');
     const mapScreen = document.getElementById('screen-map');
     
@@ -603,7 +757,6 @@ async function startApp() {
         mapScreen.style.transform = 'translateY(0)';
         console.log('🗺️ Mappa visualizzata');
         
-        // Ottieni la posizione corrente
         let lat = 45.4660;
         let lng = 7.8830;
         
@@ -623,19 +776,16 @@ async function startApp() {
             }
         }
         
-        // 🔥 PASSO 1: Genera i tesori starter (se necessario)
         await generateStartersForUser(lat, lng);
         
-        // 🔥 PASSO 2: Inizializza la mappa
         setTimeout(() => {
             if (typeof initMap === 'function') {
                 initMap();
             } else {
-                console.warn('⚠️ initMap non definita, assicurati che sia definita nel DOM');
+                console.warn('⚠️ initMap non definita');
             }
         }, 300);
         
-        // 🔥 PASSO 3: Carica i tesori (ora dovrebbero esserci gli starter)
         setTimeout(() => {
             loadRealTreasures();
         }, 1500);
@@ -645,7 +795,7 @@ async function startApp() {
 }
 
 // ============================================================
-// 16. CARICA TESORI REALI DAL BACKEND
+// 17. CARICA TESORI REALI DAL BACKEND
 // ============================================================
 
 async function loadRealTreasures() {
@@ -662,7 +812,6 @@ async function loadRealTreasures() {
     }
 
     try {
-        // Ottieni la posizione corrente
         let lat = 45.4660;
         let lng = 7.8830;
         
@@ -682,7 +831,6 @@ async function loadRealTreasures() {
             }
         }
         
-        // 🔥 Usa getNearbyTreasures per caricare i tesori
         const treasures = await getNearbyTreasures(lat, lng, 10000);
         console.log('📦 Risultato getNearbyTreasures:', treasures);
 
@@ -706,7 +854,7 @@ async function loadRealTreasures() {
 }
 
 // ============================================================
-// 17. SISTEMA AUDIO
+// 18. SISTEMA AUDIO
 // ============================================================
 
 const AudioSystem = {
@@ -775,7 +923,7 @@ const AudioSystem = {
 };
 
 // ============================================================
-// 18. FUNZIONE PER PULIRE I MARKER (dichiarata per sicurezza)
+// 19. FUNZIONE PER PULIRE I MARKER
 // ============================================================
 
 function clearTreasureMarkers() {
@@ -788,7 +936,7 @@ function clearTreasureMarkers() {
 }
 
 // ============================================================
-// 19. FUNZIONE PER AGGIUNGERE MARKER (dichiarata per sicurezza)
+// 20. FUNZIONE PER AGGIUNGERE MARKER
 // ============================================================
 
 function addRealTreasureMarker(treasure) {
@@ -903,6 +1051,28 @@ function addRealTreasureMarker(treasure) {
 }
 
 // ============================================================
+// 21. FUNZIONE PER ANDARE ALLO STEP (definita per sicurezza)
+// ============================================================
+
+function goToStep(step) {
+    if (step < 1 || step > 4) return;
+
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('step' + step).classList.add('active');
+
+    document.querySelectorAll('.step-indicator .step').forEach(el => {
+        const s = parseInt(el.dataset.step);
+        el.classList.remove('active', 'done');
+        if (s === step) el.classList.add('active');
+        else if (s < step) el.classList.add('done');
+    });
+
+    if (step === 1) {
+        setTimeout(() => initHidePhoto(), 100);
+    }
+}
+
+// ============================================================
 // ESPORTA FUNZIONI (per uso globale)
 // ============================================================
 window.registerUser = registerUser;
@@ -942,6 +1112,14 @@ window.generateStartersForUser = generateStartersForUser;
 window.clearTreasureMarkers = clearTreasureMarkers;
 window.addRealTreasureMarker = addRealTreasureMarker;
 
+// Caricamento Foto
+window.initHidePhoto = initHidePhoto;
+window.handleFileSelect = handleFileSelect;
+window.triggerFileInput = triggerFileInput;
+window.clearHidePhoto = clearHidePhoto;
+window.saveHidePhotoAndGoToStep2 = saveHidePhotoAndGoToStep2;
+window.goToStep = goToStep;
+
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
 console.log('  - registerUser(), loginUser()');
@@ -951,4 +1129,5 @@ console.log('  - handleLogin(), handleRegister(), handleLogout()');
 console.log('  - startApp() - Avvia la mappa e genera starter');
 console.log('  - loadRealTreasures() - Carica i tesori');
 console.log('  - generateStartersForUser() - Genera tesori starter');
+console.log('  - triggerFileInput() - Carica foto (FIX applicato!)');
 console.log('  - AudioSystem - Gestione audio');
