@@ -22,10 +22,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// ============================================================
+// 🔥 MIDDLEWARE - CON LIMITE AUMENTATO A 50MB
+// ============================================================
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Servi i file statici dalla cartella "public" (se esiste)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -115,26 +117,11 @@ app.listen(PORT, async () => {
         await sequelize.authenticate();
         console.log('✅ Database connected');
  
-        // ============================================================
-        // 🔥 NUOVA LOGICA: PRESERVA I DATI SE POSSIBILE
-        // ============================================================
-        try {
-            // Prova prima con alter: true (preserva i dati)
-            await sequelize.sync({ alter: true });
-            console.log('✅ Tabelle sincronizzate con alter:true (dati preservati)');
-            console.log('📊 I dati esistenti sono stati mantenuti.');
-        } catch (syncError) {
-            console.warn('⚠️ alter:true fallito, provo con force:true...');
-            console.warn('Motivo:', syncError.message);
-            
-            // Se alter fallisce, usa force come ultima risorsa
-            await sequelize.sync({ force: true });
-            console.log('✅ Tabelle ricreate con force:true (dati persi, ma app funzionante)');
-            console.log('⚠️ ATTENZIONE: Tutti i dati sono stati cancellati e ricreati.');
-        }
+        // Sincronizzazione con alter:true per preservare i dati
+        await sequelize.sync({ alter: true });
+        console.log('✅ Tabelle sincronizzate (dati preservati)');
 
     } catch (error) {
         console.error('❌ Database connection error:', error.message);
-        console.error('❌ Dettaglio:', error);
     }
 });
