@@ -379,7 +379,7 @@
                             <button id="hide-photo-remove" onclick="clearHidePhoto()" style="display:none; position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); border:none; color:#fff; width:28px; height:28px; border-radius:50%; font-size:14px; cursor:pointer; z-index:5;">✕</button>
                         </div>
                         <input type="file" id="hide-photo-input" accept="image/*" style="display:none;" />
-                        <button class="hide-location-btn" onclick="triggerFileInput()" style="width:100%; padding:12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; color:var(--text-primary); cursor:pointer; font-size:14px; transition:0.2s;">
+                        <button class="hide-location-btn" id="hide-photo-btn" style="width:100%; padding:12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; color:var(--text-primary); cursor:pointer; font-size:14px; transition:0.2s;">
                             📸 Carica foto
                         </button>
                         <div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">
@@ -494,134 +494,110 @@
 
     </div>
 
-    <!-- Carica il frontend.js PRIMA delle funzioni inline -->
     <script src="/frontend.js"></script>
 
     <script>
         // ============================================================
-        // FUNZIONI DI NAVIGAZIONE E MAPPA
+        // CARICAMENTO FOTO - VERSIONE DEFINITIVA
         // ============================================================
 
-        let map;
-        let userMarker;
-        let userPos = { lat: 45.4660, lng: 7.8830 };
-        let watchId = null;
-        let isFollowing = false;
-
-        let radarActive = false;
-        let radarTreasure = null;
-        let radarAnimationId = null;
-        let radarDistance = 0;
-
-        // Variabili per la selezione posizione su "Nascondi"
-        let hideMap = null;
-        let hideMarker = null;
-        let selectedHideLocation = { lat: 45.4660, lng: 7.8830 };
-        let selectedHideAddress = '📍 Piazza Ottinetti, Ivrea';
-
-        // Variabili per il caricamento foto
+        // Variabili globali per la foto
         let hidePhotoFile = null;
         let hidePhotoDataUrl = null;
 
-        // ============================================================
-        // CARICAMENTO FOTO
-        // ============================================================
-
-        function initHidePhoto() {
+        // Inizializza il caricamento foto quando la pagina è pronta
+        document.addEventListener('DOMContentLoaded', function() {
             const input = document.getElementById('hide-photo-input');
-            if (!input) {
-                console.error('❌ Input file non trovato');
+            const btn = document.getElementById('hide-photo-btn');
+            
+            if (!input || !btn) {
+                console.warn('⚠️ Elementi per il caricamento foto non trovati');
                 return;
             }
             
-            input.removeEventListener('change', handleFileSelect);
-            input.addEventListener('change', handleFileSelect);
-            console.log('📸 Input file inizializzato correttamente');
-        }
-
-        function handleFileSelect(e) {
-            console.log('📸 Evento change catturato!');
-            
-            const input = e.target;
-            const file = input.files[0];
-            
-            if (!file) {
-                console.log('⚠️ Nessun file selezionato');
-                return;
-            }
-            
-            console.log('📸 File selezionato:', file.name, file.size, file.type);
-            
-            if (file.size > 5 * 1024 * 1024) {
-                showToast('❌ La foto è troppo grande (max 5MB)');
+            // Usa un event listener invece di onclick
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('📸 Pulsante cliccato');
+                
+                // Reset del valore
                 input.value = '';
-                return;
-            }
+                // Apri la galleria
+                input.click();
+                console.log('📸 Galleria aperta');
+            });
             
-            if (!file.type.startsWith('image/')) {
-                showToast('❌ Il file deve essere un\'immagine');
+            // Gestisce la selezione del file
+            input.addEventListener('change', function(e) {
+                console.log('📸 Evento change catturato!');
+                
+                const file = e.target.files[0];
+                if (!file) {
+                    console.log('⚠️ Nessun file selezionato');
+                    return;
+                }
+                
+                console.log('📸 File selezionato:', file.name, file.size, file.type);
+                
+                // Validazioni
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('❌ La foto è troppo grande (max 5MB)');
+                    input.value = '';
+                    return;
+                }
+                
+                if (!file.type.startsWith('image/')) {
+                    showToast('❌ Il file deve essere un\'immagine');
+                    input.value = '';
+                    return;
+                }
+                
+                // Salva il file
+                hidePhotoFile = file;
+                console.log('📸 File salvato in hidePhotoFile');
+                
+                // Leggi il file per l'anteprima
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    console.log('📸 FileReader completato');
+                    hidePhotoDataUrl = event.target.result;
+                    
+                    const img = document.getElementById('hide-photo-image');
+                    const placeholder = document.getElementById('hide-photo-placeholder');
+                    const preview = document.getElementById('hide-photo-preview');
+                    const removeBtn = document.getElementById('hide-photo-remove');
+                    
+                    if (img) {
+                        img.src = event.target.result;
+                        img.style.display = 'block';
+                    }
+                    if (placeholder) {
+                        placeholder.style.display = 'none';
+                    }
+                    if (preview) {
+                        preview.classList.add('has-image');
+                    }
+                    if (removeBtn) {
+                        removeBtn.style.display = 'block';
+                    }
+                    
+                    showToast('✅ Foto caricata!');
+                    console.log('📸 Anteprima visualizzata');
+                };
+                
+                reader.onerror = function() {
+                    console.error('❌ Errore FileReader');
+                    showToast('❌ Errore nella lettura del file');
+                };
+                
+                reader.readAsDataURL(file);
+                
+                // Reset dell'input DOPO aver letto il file
                 input.value = '';
-                return;
-            }
-            
-            hidePhotoFile = file;
-            console.log('📸 File salvato in hidePhotoFile');
-            
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                console.log('📸 FileReader completato');
-                hidePhotoDataUrl = event.target.result;
-                
-                const img = document.getElementById('hide-photo-image');
-                const placeholder = document.getElementById('hide-photo-placeholder');
-                const preview = document.getElementById('hide-photo-preview');
-                const removeBtn = document.getElementById('hide-photo-remove');
-                
-                if (img) {
-                    img.src = event.target.result;
-                    img.style.display = 'block';
-                }
-                if (placeholder) {
-                    placeholder.style.display = 'none';
-                }
-                if (preview) {
-                    preview.classList.add('has-image');
-                }
-                if (removeBtn) {
-                    removeBtn.style.display = 'block';
-                }
-                
-                showToast('✅ Foto caricata!');
-                console.log('📸 Anteprima visualizzata');
-            };
-            
-            reader.onerror = function() {
-                console.error('❌ Errore FileReader');
-                showToast('❌ Errore nella lettura del file');
-            };
-            
-            reader.readAsDataURL(file);
-            
-            input.value = '';
-        }
+            });
+        });
 
-
-   function triggerFileInput() {
-    console.log('📸 triggerFileInput chiamato');
-    
-    const input = document.getElementById('hide-photo-input');
-    if (!input) {
-        console.error('❌ Input file non trovato');
-        showToast('⚠️ Errore: input non trovato');
-        return;
-    }
-    
-    // 🔥 FIX: Reset del valore prima di aprire
-    input.value = '';
-    input.click();
-    console.log('📸 File input aperto (resettato)');
-}
-
+        // Rimuove la foto selezionata
         function clearHidePhoto() {
             console.log('🗑️ Rimozione foto');
             
@@ -654,6 +630,7 @@
             showToast('🗑️ Foto rimossa');
         }
 
+        // Salva la foto e passa allo step 2
         function saveHidePhotoAndGoToStep2() {
             console.log('📸 Verifica foto:', hidePhotoFile ? '✅ File presente' : '❌ NESSUN FILE');
             
@@ -671,6 +648,27 @@
             console.log('📸 Dati foto salvati in tempTreasureData');
             goToStep(2);
         }
+
+        // ============================================================
+        // FUNZIONI DI NAVIGAZIONE E MAPPA
+        // ============================================================
+
+        let map;
+        let userMarker;
+        let userPos = { lat: 45.4660, lng: 7.8830 };
+        let watchId = null;
+        let isFollowing = false;
+
+        let radarActive = false;
+        let radarTreasure = null;
+        let radarAnimationId = null;
+        let radarDistance = 0;
+
+        // Variabili per la selezione posizione su "Nascondi"
+        let hideMap = null;
+        let hideMarker = null;
+        let selectedHideLocation = { lat: 45.4660, lng: 7.8830 };
+        let selectedHideAddress = '📍 Piazza Ottinetti, Ivrea';
 
         // ============================================================
         // SELEZIONE POSIZIONE
@@ -790,6 +788,23 @@
         // NAVIGAZIONE
         // ============================================================
 
+        function startApp() {
+            document.getElementById('screen-home').style.transform = 'translateY(-100%)';
+            document.getElementById('screen-map').style.transform = 'translateY(0)';
+            showToast('📍 Ricerca posizione GPS...');
+
+            setTimeout(() => {
+                initMap();
+                setTimeout(() => {
+                    if (map) {
+                        map.invalidateSize();
+                        generateStartersForUser(userPos.lat, userPos.lng);
+                        setTimeout(() => loadRealTreasures(), 1500);
+                    }
+                }, 500);
+            }, 300);
+        }
+
         function goTo(screen) {
             const screens = {
                 map: 'screen-map',
@@ -812,6 +827,7 @@
 
             if (screen === 'map') {
                 setTimeout(() => { if (map) map.invalidateSize(); }, 400);
+                generateStartersForUser(userPos.lat, userPos.lng);
                 setTimeout(() => loadRealTreasures(), 1500);
             }
 
@@ -842,11 +858,55 @@
                 else if (s < step) el.classList.add('done');
             });
 
-            if (step === 1) {
-                setTimeout(() => initHidePhoto(), 100);
-            }
             if (step === 2) {
                 setTimeout(() => initHideMap(), 300);
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ============================================================
+        // GENERA TESORI STARTER
+        // ============================================================
+
+        async function generateStartersForUser(lat, lng) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.log('⚠️ Utente non loggato, salto generazione starter');
+                return;
+            }
+
+            try {
+                console.log(`📍 Controllo tesori starter per posizione: ${lat}, ${lng}`);
+                const response = await fetch(
+                    `${API_URL}/treasures/starter/generate?lat=${lat}&lng=${lng}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log(`✅ ${data.message}`);
+                    if (data.data && data.data.length > 0) {
+                        console.log(`📍 Creati ${data.data.length} tesori starter`);
+                        data.data.forEach((t, i) => {
+                            console.log(`  ${i+1}. ${t.title}`);
+                        });
+                    }
+                } else {
+                    console.log(`ℹ️ ${data.message}`);
+                }
+            } catch (error) {
+                console.error('❌ Errore generazione starter:', error);
             }
         }
 
