@@ -11,6 +11,14 @@ let currentUser = null;
 let hidePhotoFile = null;
 let hidePhotoDataUrl = null;
 
+// Variabili per la mappa
+let map = null;
+let userMarker = null;
+let userPos = { lat: 45.4660, lng: 7.8830 };
+let isFollowing = false;
+let watchId = null;
+let treasureMarkers = [];
+
 // ============================================================
 // 1. REGISTRAZIONE
 // ============================================================
@@ -374,7 +382,6 @@ async function handleLogin() {
         showAuthMessage('✅ Login effettuato!');
         updateUIForLoggedInUser();
         updateProfileUI();
-        // Avvia l'app dopo il login
         setTimeout(() => startApp(), 500);
     } else {
         showAuthMessage('❌ Login fallito. Controlla le credenziali.', true);
@@ -398,7 +405,6 @@ async function handleRegister() {
         showAuthMessage('✅ Registrazione completata!');
         updateUIForLoggedInUser();
         updateProfileUI();
-        // Avvia l'app dopo la registrazione
         setTimeout(() => startApp(), 500);
     } else {
         showAuthMessage('❌ Registrazione fallita. Email già in uso?', true);
@@ -581,7 +587,6 @@ async function generateStartersForUser(lat, lng) {
 // 15. CARICAMENTO FOTO - VERSIONE CORRETTA
 // ============================================================
 
-// Inizializza il listener per il cambio file
 function initHidePhoto() {
     const input = document.getElementById('hide-photo-input');
     if (!input) {
@@ -594,7 +599,6 @@ function initHidePhoto() {
     console.log('📸 Input file inizializzato correttamente');
 }
 
-// Gestisce la selezione del file
 function handleFileSelect(e) {
     console.log('📸 Evento change catturato!');
     
@@ -661,7 +665,6 @@ function handleFileSelect(e) {
     input.value = '';
 }
 
-// 🔥 FUNZIONE CORRETTA - Apre il selettore di file
 function triggerFileInput() {
     console.log('📸 triggerFileInput chiamato');
     
@@ -677,7 +680,6 @@ function triggerFileInput() {
     console.log('📸 File input aperto (resettato)');
 }
 
-// Rimuove la foto selezionata
 function clearHidePhoto() {
     console.log('🗑️ Rimozione foto');
     
@@ -710,7 +712,6 @@ function clearHidePhoto() {
     showToast('🗑️ Foto rimossa');
 }
 
-// Salva la foto e passa allo step 2
 function saveHidePhotoAndGoToStep2() {
     console.log('📸 Verifica foto:', hidePhotoFile ? '✅ File presente' : '❌ NESSUN FILE');
     
@@ -727,6 +728,31 @@ function saveHidePhotoAndGoToStep2() {
     
     console.log('📸 Dati foto salvati in tempTreasureData');
     goToStep(2);
+}
+
+function goToStep(step) {
+    if (step < 1 || step > 4) return;
+
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('step' + step).classList.add('active');
+
+    document.querySelectorAll('.step-indicator .step').forEach(el => {
+        const s = parseInt(el.dataset.step);
+        el.classList.remove('active', 'done');
+        if (s === step) el.classList.add('active');
+        else if (s < step) el.classList.add('done');
+    });
+
+    if (step === 1) {
+        setTimeout(() => initHidePhoto(), 100);
+    }
+    if (step === 2) {
+        setTimeout(() => {
+            if (typeof initHideMap === 'function') {
+                initHideMap();
+            }
+        }, 300);
+    }
 }
 
 // ============================================================
@@ -782,7 +808,14 @@ async function startApp() {
             if (typeof initMap === 'function') {
                 initMap();
             } else {
-                console.warn('⚠️ initMap non definita');
+                console.warn('⚠️ initMap non definita, provo a definirla...');
+                if (typeof L !== 'undefined') {
+                    console.log('✅ Leaflet disponibile, inizializzo mappa...');
+                    initializeMap();
+                } else {
+                    console.error('❌ Leaflet non disponibile!');
+                    showToast('❌ Errore: mappa non disponibile');
+                }
             }
         }, 300);
         
@@ -795,7 +828,145 @@ async function startApp() {
 }
 
 // ============================================================
-// 17. CARICA TESORI REALI DAL BACKEND
+// 17. INIZIALIZZA MAPPA (FALLBACK)
+// ============================================================
+
+function initializeMap() {
+    console.log('🗺️ Inizializzazione mappa da frontend.js...');
+    
+    if (typeof L === 'undefined') {
+        console.error('❌ Leaflet non caricato!');
+        showToast('⚠️ Errore: libreria mappa non disponibile');
+        return;
+    }
+    
+    if (map) {
+        console.log('ℹ️ Mappa già esistente');
+        return;
+    }
+    
+    const container = document.getElementById('map-container');
+    if (!container) {
+        console.error('❌ Contenitore mappa non trovato!');
+        return;
+    }
+    
+    try {
+        map = L.map('map-container', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([userPos.lat, userPos.lng], 16);
+
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const tileLayer = currentTheme === 'dark' ?
+            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+        L.tileLayer(tileLayer, {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+        }).addTo(map);
+
+        addUserMarker();
+        startGPS();
+
+        map.on('dragstart', function() {
+            if (isFollowing) {
+                isFollowing = false;
+                document.getElementById('btnCenter').classList.remove('active');
+                document.getElementById('btnCenter').innerHTML = '🎯';
+            }
+        });
+
+        setTimeout(() => {
+            if (map) map.invalidateSize();
+            console.log('✅ Mappa inizializzata correttamente');
+            loadRealTreasures();
+        }, 500);
+
+    } catch (error) {
+        console.error('❌ Errore inizializzazione mappa:', error);
+        showToast('❌ Errore nel caricamento della mappa');
+    }
+}
+
+function addUserMarker() {
+    if (!map) return;
+    
+    const userIcon = L.divIcon({
+        className: 'user-marker',
+        html: `<div style="width:16px;height:16px;background:#39ff14;border-radius:50%;border:3px solid #fff;box-shadow:0 0 20px rgba(57,255,20,0.6);"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+
+    userMarker = L.marker([userPos.lat, userPos.lng], {
+        icon: userIcon,
+        zIndexOffset: 1000
+    }).addTo(map);
+}
+
+function startGPS() {
+    if (!navigator.geolocation) {
+        console.log('⚠️ GPS non supportato');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const { latitude, longitude } = pos.coords;
+            updateUserPosition(latitude, longitude);
+            if (map) map.setView([latitude, longitude], 16);
+            console.log('📍 GPS acquisito:', latitude, longitude);
+        },
+        () => {
+            console.log('⚠️ GPS non disponibile, posizione simulata (Ivrea)');
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000
+        }
+    );
+
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+            const { latitude, longitude } = pos.coords;
+            updateUserPosition(latitude, longitude);
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+}
+
+function updateUserPosition(lat, lng) {
+    userPos.lat = lat;
+    userPos.lng = lng;
+    if (userMarker) {
+        userMarker.setLatLng([lat, lng]);
+    }
+    if (isFollowing && map) {
+        map.setView([lat, lng], map.getZoom());
+    }
+}
+
+function centerOnUser() {
+    if (!map) return;
+    isFollowing = !isFollowing;
+    const btn = document.getElementById('btnCenter');
+    if (isFollowing) {
+        btn.classList.add('active');
+        btn.innerHTML = '📍';
+        map.setView([userPos.lat, userPos.lng], 16);
+        showToast('📍 Follow attivo');
+    } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '🎯';
+        showToast('🗺️ Esplorazione libera');
+    }
+}
+
+// ============================================================
+// 18. CARICA TESORI REALI DAL BACKEND
 // ============================================================
 
 async function loadRealTreasures() {
@@ -854,7 +1025,7 @@ async function loadRealTreasures() {
 }
 
 // ============================================================
-// 18. SISTEMA AUDIO
+// 19. SISTEMA AUDIO
 // ============================================================
 
 const AudioSystem = {
@@ -923,7 +1094,7 @@ const AudioSystem = {
 };
 
 // ============================================================
-// 19. FUNZIONE PER PULIRE I MARKER
+// 20. FUNZIONE PER PULIRE I MARKER
 // ============================================================
 
 function clearTreasureMarkers() {
@@ -936,7 +1107,7 @@ function clearTreasureMarkers() {
 }
 
 // ============================================================
-// 20. FUNZIONE PER AGGIUNGERE MARKER
+// 21. FUNZIONE PER AGGIUNGERE MARKER
 // ============================================================
 
 function addRealTreasureMarker(treasure) {
@@ -1051,28 +1222,6 @@ function addRealTreasureMarker(treasure) {
 }
 
 // ============================================================
-// 21. FUNZIONE PER ANDARE ALLO STEP (definita per sicurezza)
-// ============================================================
-
-function goToStep(step) {
-    if (step < 1 || step > 4) return;
-
-    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('step' + step).classList.add('active');
-
-    document.querySelectorAll('.step-indicator .step').forEach(el => {
-        const s = parseInt(el.dataset.step);
-        el.classList.remove('active', 'done');
-        if (s === step) el.classList.add('active');
-        else if (s < step) el.classList.add('done');
-    });
-
-    if (step === 1) {
-        setTimeout(() => initHidePhoto(), 100);
-    }
-}
-
-// ============================================================
 // ESPORTA FUNZIONI (per uso globale)
 // ============================================================
 window.registerUser = registerUser;
@@ -1120,6 +1269,11 @@ window.clearHidePhoto = clearHidePhoto;
 window.saveHidePhotoAndGoToStep2 = saveHidePhotoAndGoToStep2;
 window.goToStep = goToStep;
 
+// Mappa
+window.initMap = initMap;
+window.initializeMap = initializeMap;
+window.centerOnUser = centerOnUser;
+
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
 console.log('  - registerUser(), loginUser()');
@@ -1130,4 +1284,5 @@ console.log('  - startApp() - Avvia la mappa e genera starter');
 console.log('  - loadRealTreasures() - Carica i tesori');
 console.log('  - generateStartersForUser() - Genera tesori starter');
 console.log('  - triggerFileInput() - Carica foto (FIX applicato!)');
+console.log('  - initMap() - Inizializza la mappa');
 console.log('  - AudioSystem - Gestione audio');
