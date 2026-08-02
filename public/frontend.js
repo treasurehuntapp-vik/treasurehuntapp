@@ -756,7 +756,208 @@ function goToStep(step) {
 }
 
 // ============================================================
-// 16. START APP - Avvia l'applicazione
+// 16. NAVIGAZIONE E MAPPA
+// ============================================================
+
+function goTo(screen) {
+    console.log('🔄 Navigazione a:', screen);
+    
+    const screens = {
+        map: 'screen-map',
+        profile: 'screen-profile',
+        hide: 'screen-hide',
+        leaderboard: 'screen-leaderboard'
+    };
+
+    Object.values(screens).forEach(id => {
+        document.getElementById(id).style.transform = 'translateY(100%)';
+    });
+
+    const target = document.getElementById(screens[screen]);
+    if (target) {
+        target.style.transform = 'translateY(0)';
+    }
+    
+    const clueModal = document.getElementById('clue-modal');
+    if (clueModal) {
+        clueModal.classList.remove('show');
+    }
+
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    const navMap = { map: 0, hide: 1, leaderboard: 2, profile: 3 };
+    const btns = document.querySelectorAll('.nav-item');
+    if (btns[navMap[screen]]) {
+        btns[navMap[screen]].classList.add('active');
+    }
+
+    if (screen === 'map') {
+        setTimeout(() => { 
+            if (map) map.invalidateSize();
+            loadRealTreasures();
+        }, 400);
+    }
+
+    if (screen === 'profile') {
+        updateProfileUI();
+    }
+
+    if (screen === 'leaderboard') {
+        loadLeaderboard(currentLeaderboardFilter || 'all');
+    }
+}
+
+function closeClue() {
+    const modal = document.getElementById('clue-modal');
+    if (modal) modal.classList.remove('show');
+}
+
+function openClue(id) {
+    window.currentTreasureId = id;
+    
+    let t = null;
+    if (window.realTreasures) {
+        t = window.realTreasures.find(t => t.id === id);
+    }
+
+    if (!t) {
+        showToast('⚠️ Tesoro non trovato');
+        return;
+    }
+
+    if (AudioSystem) AudioSystem.play('clueOpen');
+
+    const tag = document.getElementById('modal-tag');
+    const clueBox = document.getElementById('modal-clue');
+    const bonus = document.getElementById('modal-bonus');
+    const levelEl = document.getElementById('modal-level');
+
+    tag.className = 'modal-tag';
+    clueBox.className = 'clue-box';
+    bonus.style.display = 'none';
+
+    let levelText = '';
+    let karmaText = '';
+
+    if (t.level === 'relic') {
+        tag.textContent = '⚡ RELIQUIA DIMENTICATA';
+        tag.classList.add('relic');
+        clueBox.classList.add('relic');
+        bonus.style.display = 'inline';
+        bonus.textContent = '🔥 Karma x3 (+30)';
+        levelText = '⚡ Reliquia Leggendaria';
+        karmaText = 'Karma: 30';
+        if (AudioSystem) AudioSystem.play('relicAlert');
+    } else if (t.level === 'warm') {
+        tag.textContent = '🔥 Tesoro "Caldo"';
+        tag.classList.add('warm');
+        clueBox.classList.add('warm');
+        bonus.style.display = 'inline';
+        bonus.textContent = '🔥 Karma x2 (+20)';
+        levelText = '🔥 Tesoro Caldo';
+        karmaText = 'Karma: 20';
+    } else {
+        tag.textContent = '🏴‍☠️ Tesoro Rilevato';
+        levelText = '📦 Tesoro Normale';
+        karmaText = 'Karma: 10';
+    }
+
+    levelEl.textContent = `${levelText} · ${karmaText}`;
+    document.getElementById('modal-title').textContent = t.title;
+    document.getElementById('modal-clue').textContent = `"${t.clue}"`;
+    document.getElementById('modal-dist').textContent = `${t.distance || 0} m`;
+
+    document.getElementById('clue-modal').classList.add('show');
+}
+
+async function findTreasure() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showToast('⚠️ Devi essere loggato');
+        return;
+    }
+
+    const treasureId = window.currentTreasureId;
+    if (!treasureId) {
+        showToast('⚠️ Nessun tesoro selezionato');
+        return;
+    }
+
+    let lat = userPos.lat || 45.4660;
+    let lng = userPos.lng || 7.8830;
+
+    try {
+        const response = await fetch(`${API_URL}/treasures/${treasureId}/find?lat=${lat}&lng=${lng}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            closeClue();
+            if (AudioSystem) AudioSystem.play('treasureFound');
+            showToast(data.message);
+            setTimeout(() => loadRealTreasures(), 2000);
+        } else {
+            showToast('❌ ' + data.message);
+        }
+    } catch (error) {
+        console.error('Errore:', error);
+        showToast('❌ Errore di connessione al server');
+    }
+}
+
+function reportTreasure() {
+    if (confirm('🚨 Segnali questo tesoro come pericoloso?')) {
+        closeClue();
+        showToast('⚠️ Segnalazione inviata!');
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
+    showToast(newTheme === 'dark' ? '🌙 Tema scuro attivato' : '☀️ Tema chiaro attivato');
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+
+    const btn = document.getElementById('theme-toggle');
+    if (btn) {
+        btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+
+    if (map) {
+        map.eachLayer(layer => {
+            if (layer instanceof L.TileLayer) {
+                map.removeLayer(layer);
+            }
+        });
+
+        const tileLayer = theme === 'dark' ?
+            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+        L.tileLayer(tileLayer, {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+        }).addTo(map);
+    }
+}
+
+function toggleAudio() {
+    if (AudioSystem) {
+        AudioSystem.toggleMute();
+    }
+}
+
+// ============================================================
+// 17. START APP - Avvia l'applicazione
 // ============================================================
 
 async function startApp() {
@@ -828,7 +1029,7 @@ async function startApp() {
 }
 
 // ============================================================
-// 17. INIZIALIZZA MAPPA (FALLBACK)
+// 18. INIZIALIZZA MAPPA (FALLBACK)
 // ============================================================
 
 function initializeMap() {
@@ -966,7 +1167,7 @@ function centerOnUser() {
 }
 
 // ============================================================
-// 18. CARICA TESORI REALI DAL BACKEND
+// 19. CARICA TESORI REALI DAL BACKEND
 // ============================================================
 
 async function loadRealTreasures() {
@@ -1025,7 +1226,7 @@ async function loadRealTreasures() {
 }
 
 // ============================================================
-// 19. SISTEMA AUDIO
+// 20. SISTEMA AUDIO
 // ============================================================
 
 const AudioSystem = {
@@ -1094,7 +1295,7 @@ const AudioSystem = {
 };
 
 // ============================================================
-// 20. FUNZIONE PER PULIRE I MARKER
+// 21. FUNZIONE PER PULIRE I MARKER
 // ============================================================
 
 function clearTreasureMarkers() {
@@ -1107,7 +1308,7 @@ function clearTreasureMarkers() {
 }
 
 // ============================================================
-// 21. FUNZIONE PER AGGIUNGERE MARKER
+// 22. FUNZIONE PER AGGIUNGERE MARKER
 // ============================================================
 
 function addRealTreasureMarker(treasure) {
@@ -1252,7 +1453,7 @@ window.getUnreadCount = getUnreadCount;
 
 // Audio
 window.AudioSystem = AudioSystem;
-window.toggleAudio = () => AudioSystem.toggleMute();
+window.toggleAudio = toggleAudio;
 
 // App - TESORI STARTER
 window.startApp = startApp;
@@ -1269,20 +1470,17 @@ window.clearHidePhoto = clearHidePhoto;
 window.saveHidePhotoAndGoToStep2 = saveHidePhotoAndGoToStep2;
 window.goToStep = goToStep;
 
-// Mappa
+// Mappa e Navigazione
 window.initMap = initMap;
 window.initializeMap = initializeMap;
 window.centerOnUser = centerOnUser;
+window.goTo = goTo;
+window.closeClue = closeClue;
+window.openClue = openClue;
+window.reportTreasure = reportTreasure;
+window.toggleTheme = toggleTheme;
+window.applyTheme = applyTheme;
+window.findTreasure = findTreasure;
 
 console.log('✅ frontend.js caricato correttamente!');
-console.log('🔧 Funzioni disponibili:');
-console.log('  - registerUser(), loginUser()');
-console.log('  - getNearbyTreasures(), createTreasure()');
-console.log('  - getLeaderboard(), getKarmaHistory()');
-console.log('  - handleLogin(), handleRegister(), handleLogout()');
-console.log('  - startApp() - Avvia la mappa e genera starter');
-console.log('  - loadRealTreasures() - Carica i tesori');
-console.log('  - generateStartersForUser() - Genera tesori starter');
-console.log('  - triggerFileInput() - Carica foto (FIX applicato!)');
-console.log('  - initMap() - Inizializza la mappa');
-console.log('  - AudioSystem - Gestione audio');
+console.log('🔧 Tutte le funzioni esportate correttamente.');
