@@ -903,6 +903,126 @@ function addRealTreasureMarker(treasure) {
 }
 
 // ============================================================
+// PROFILO - CRONOLOGIA TESORI (REALE)
+// ============================================================
+
+async function openTreasureHistory() {
+    console.log('📜 Apertura cronologia tesori...');
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showToast('⚠️ Devi essere loggato');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/treasure-history`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!data.success || !data.data || data.data.length === 0) {
+            showToast('📭 Nessun tesoro trovato o nascosto');
+            return;
+        }
+
+        // Costruisci il contenuto del modale
+        let html = `
+            <div style="padding:20px; max-height:400px; overflow-y:auto;">
+                <h3 style="margin-bottom:16px; color:var(--neon-green);">📜 Cronologia Tesori</h3>
+        `;
+
+        data.data.forEach(t => {
+            const statusIcon = t.status === 'found' ? '✅' : '📦';
+            const statusText = t.status === 'found' ? 'Trovato' : 'Nascosto';
+            const date = new Date(t.created_at).toLocaleDateString('it-IT');
+            
+            html += `
+                <div style="padding:12px 0; border-bottom:1px solid var(--border-color);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:600; color:var(--text-primary);">${t.title}</span>
+                        <span style="font-size:12px; color:${t.status === 'found' ? 'var(--neon-green)' : 'var(--neon-gold)'};">
+                            ${statusIcon} ${statusText}
+                        </span>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-secondary);">
+                        ${date}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                <button onclick="closeClue()" style="margin-top:16px; padding:10px 20px; border-radius:12px; border:1px solid var(--border-color); background:transparent; color:var(--text-primary); cursor:pointer; width:100%;">
+                    Chiudi
+                </button>
+            </div>
+        `;
+
+        // Mostra il modale
+        const modal = document.getElementById('clue-modal');
+        if (modal) {
+            document.getElementById('modal-title').textContent = '📜 Cronologia Tesori';
+            document.getElementById('modal-tag').textContent = 'Storico';
+            document.getElementById('modal-tag').className = 'modal-tag';
+            document.getElementById('modal-level').textContent = '';
+            document.getElementById('modal-clue').innerHTML = html;
+            document.getElementById('modal-dist').textContent = '';
+            document.getElementById('modal-bonus').style.display = 'none';
+            
+            document.querySelector('.modal-actions').style.display = 'none';
+            document.querySelector('.btn-danger').style.display = 'none';
+            
+            modal.classList.add('show');
+        } else {
+            showToast('📜 Cronologia tesori caricata');
+        }
+
+    } catch (error) {
+        console.error('❌ Errore cronologia:', error);
+        showToast('❌ Errore nel caricamento della cronologia');
+    }
+}
+
+// ============================================================
+// CHIUDI MODALE (con ripristino)
+// ============================================================
+
+function closeClue() {
+    const modal = document.getElementById('clue-modal');
+    if (modal) {
+        modal.classList.remove('show');
+        
+        // Ripristina i pulsanti per i tesori (se sono stati nascosti)
+        const actions = document.querySelector('.modal-actions');
+        const dangerBtn = document.querySelector('.btn-danger');
+        if (actions) actions.style.display = 'flex';
+        if (dangerBtn) dangerBtn.style.display = 'block';
+        
+        // Ripristina il contenuto del modale (per evitare che rimanga la cronologia)
+        const titleEl = document.getElementById('modal-title');
+        const tagEl = document.getElementById('modal-tag');
+        const levelEl = document.getElementById('modal-level');
+        const clueEl = document.getElementById('modal-clue');
+        const distEl = document.getElementById('modal-dist');
+        const bonusEl = document.getElementById('modal-bonus');
+        
+        if (titleEl) titleEl.textContent = 'Il Quaderno Perduto';
+        if (tagEl) {
+            tagEl.textContent = '🏴‍☠️ Tesoro Rilevato';
+            tagEl.className = 'modal-tag';
+        }
+        if (levelEl) levelEl.textContent = '📦 Tesoro Normale · Karma: 10';
+        if (clueEl) clueEl.textContent = '"Dove l\'acqua cantava e ora la pietra tace..."';
+        if (distEl) distEl.textContent = '150 m';
+        if (bonusEl) bonusEl.style.display = 'none';
+    }
+}
+
+// ============================================================
 // ESPORTA FUNZIONI (per uso globale)
 // ============================================================
 window.registerUser = registerUser;
@@ -916,6 +1036,8 @@ window.getLeaderboard = getLeaderboard;
 window.getKarmaHistory = getKarmaHistory;
 window.logout = logout;
 window.showToast = showToast;
+window.openTreasureHistory = openTreasureHistory;
+window.closeClue = closeClue;
 
 // Auth UI
 window.handleLogin = handleLogin;
