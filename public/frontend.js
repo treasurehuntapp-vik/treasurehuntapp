@@ -942,6 +942,50 @@ window.generateStartersForUser = generateStartersForUser;
 window.clearTreasureMarkers = clearTreasureMarkers;
 window.addRealTreasureMarker = addRealTreasureMarker;
 
+// ============================================================
+// PROFILO - PULSANTI (Solo collegamento, nessuna logica complessa)
+// ============================================================
+
+function openTreasureHistory() {
+    console.log('📜 Apertura cronologia tesori...');
+    showToast('📜 Cronologia tesori - In sviluppo');
+}
+
+function openBadges() {
+    console.log('🏅 Apertura badge e ricompense...');
+    showToast('🏅 Badge e Ricompense - In sviluppo');
+}
+
+function openIdentityVerification() {
+    console.log('🔐 Apertura verifica identità...');
+    showToast('🔐 Verifica Identità - In sviluppo');
+}
+
+function openSecurityCenter() {
+    console.log('🛡️ Apertura centro sicurezza...');
+    showToast('🛡️ Centro Sicurezza - In sviluppo');
+}
+
+function openPrivacySettings() {
+    console.log('⚙️ Apertura impostazioni privacy...');
+    showToast('⚙️ Impostazioni Privacy - In sviluppo');
+}
+
+function openCityLeaderboard() {
+    console.log('🏆 Apertura classifica cittadina...');
+    goTo('leaderboard');
+}
+
+// ============================================================
+// ESPORTA FUNZIONI PROFILO (per uso globale)
+// ============================================================
+window.openTreasureHistory = openTreasureHistory;
+window.openBadges = openBadges;
+window.openIdentityVerification = openIdentityVerification;
+window.openSecurityCenter = openSecurityCenter;
+window.openPrivacySettings = openPrivacySettings;
+window.openCityLeaderboard = openCityLeaderboard;
+
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
 console.log('  - registerUser(), loginUser()');
