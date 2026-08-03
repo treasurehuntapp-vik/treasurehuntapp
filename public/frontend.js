@@ -1025,9 +1025,6 @@ function closeClue() {
 // PROFILO - PULSANTI
 // ============================================================
 
-function openTreasureHistory() {
-    showToast('📜 Cronologia tesori - In sviluppo');
-}
 
 function openBadges() {
     showToast('🏅 Badge e Ricompense - In sviluppo');
@@ -1052,7 +1049,6 @@ function openCityLeaderboard() {
 // ============================================================
 // ESPORTA FUNZIONI PROFILO (per uso globale)
 // ============================================================
-window.openTreasureHistory = openTreasureHistory;
 window.openBadges = openBadges;
 window.openIdentityVerification = openIdentityVerification;
 window.openSecurityCenter = openSecurityCenter;
@@ -1073,6 +1069,7 @@ window.getLeaderboard = getLeaderboard;
 window.getKarmaHistory = getKarmaHistory;
 window.logout = logout;
 window.showToast = showToast;
+window.openTreasureHistory = openTreasureHistory;
 window.closeClue = closeClue;
 
 // Auth UI
