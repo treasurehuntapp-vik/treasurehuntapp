@@ -1023,6 +1023,94 @@ function closeClue() {
 }
 
 // ============================================================
+// APRE IL MODALE CON L'INDIZIO DEL TESORO
+// ============================================================
+
+function openClue(id) {
+    console.log('📜 Apertura indizio per tesoro:', id);
+    
+    // 🔥 RIPRISTINA I PULSANTI PRIMA DI MOSTRARE IL TESORO
+    const actions = document.querySelector('.modal-actions');
+    const dangerBtn = document.querySelector('.btn-danger');
+    if (actions) actions.style.display = 'flex';
+    if (dangerBtn) dangerBtn.style.display = 'block';
+    
+    window.currentTreasureId = id;
+    
+    let t = null;
+    if (window.realTreasures) {
+        t = window.realTreasures.find(t => t.id === id);
+    }
+
+    if (!t) {
+        showToast('⚠️ Tesoro non trovato');
+        return;
+    }
+
+    if (AudioSystem) AudioSystem.play('clueOpen');
+
+    const modal = document.getElementById('clue-modal');
+    const tag = document.getElementById('modal-tag');
+    const clueBox = document.getElementById('modal-clue');
+    const bonus = document.getElementById('modal-bonus');
+    const levelEl = document.getElementById('modal-level');
+    const titleEl = document.getElementById('modal-title');
+    const clueEl = document.getElementById('modal-clue');
+    const distEl = document.getElementById('modal-dist');
+
+    if (!modal) {
+        console.error('❌ Modale clue non trovato');
+        return;
+    }
+
+    if (tag) tag.className = 'modal-tag';
+    if (clueBox) clueBox.className = 'clue-box';
+    if (bonus) bonus.style.display = 'none';
+
+    let levelText = '';
+    let karmaText = '';
+
+    if (t.level === 'relic') {
+        if (tag) {
+            tag.textContent = '⚡ RELIQUIA DIMENTICATA';
+            tag.classList.add('relic');
+        }
+        if (clueBox) clueBox.classList.add('relic');
+        if (bonus) {
+            bonus.style.display = 'inline';
+            bonus.textContent = '🔥 Karma x3 (+30)';
+        }
+        levelText = '⚡ Reliquia Leggendaria';
+        karmaText = 'Karma: 30';
+        if (AudioSystem) AudioSystem.play('relicAlert');
+    } else if (t.level === 'warm') {
+        if (tag) {
+            tag.textContent = '🔥 Tesoro "Caldo"';
+            tag.classList.add('warm');
+        }
+        if (clueBox) clueBox.classList.add('warm');
+        if (bonus) {
+            bonus.style.display = 'inline';
+            bonus.textContent = '🔥 Karma x2 (+20)';
+        }
+        levelText = '🔥 Tesoro Caldo';
+        karmaText = 'Karma: 20';
+    } else {
+        if (tag) tag.textContent = '🏴‍☠️ Tesoro Rilevato';
+        levelText = '📦 Tesoro Normale';
+        karmaText = 'Karma: 10';
+    }
+
+    if (levelEl) levelEl.textContent = `${levelText} · ${karmaText}`;
+    if (titleEl) titleEl.textContent = t.title;
+    if (clueEl) clueEl.textContent = `"${t.clue}"`;
+    if (distEl) distEl.textContent = `${t.distance || 0} m`;
+
+    modal.classList.add('show');
+    console.log('✅ Modale aperto per:', t.title);
+}
+
+// ============================================================
 // PROFILO - BADGE E RICOMPENSE (REALE)
 // ============================================================
 
@@ -1163,6 +1251,8 @@ window.getKarmaHistory = getKarmaHistory;
 window.logout = logout;
 window.showToast = showToast;
 window.openTreasureHistory = openTreasureHistory;
+window.closeClue = closeClue;
+window.openClue = openClue;
 window.openBadges = openBadges;
 
 // Auth UI
