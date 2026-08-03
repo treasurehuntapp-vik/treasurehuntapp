@@ -1021,14 +1021,108 @@ function closeClue() {
         if (bonusEl) bonusEl.style.display = 'none';
     }
 }
+
+// ============================================================
+// PROFILO - BADGE E RICOMPENSE (REALE)
+// ============================================================
+
+async function openBadges() {
+    console.log('🏅 Apertura badge e ricompense...');
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showToast('⚠️ Devi essere loggato');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/badges`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!data.success || !data.data || data.data.length === 0) {
+            showToast('🏅 Nessun badge disponibile');
+            return;
+        }
+
+        // Costruisci il contenuto del modale
+        let html = `
+            <div style="padding:20px; max-height:400px; overflow-y:auto;">
+                <h3 style="margin-bottom:16px; color:var(--neon-gold);">🏅 Badge e Ricompense</h3>
+        `;
+
+        data.data.forEach(badge => {
+            const statusColor = badge.unlocked ? 'var(--neon-green)' : 'var(--text-secondary)';
+            const statusIcon = badge.unlocked ? '✅' : '🔒';
+            const progressBar = badge.progress ? `
+                <div style="width:100%; height:4px; background:var(--border-color); border-radius:2px; margin-top:4px;">
+                    <div style="width:${parseInt(badge.progress.split('/')[0]) / parseInt(badge.progress.split('/')[1]) * 100}%; height:100%; background:var(--neon-green); border-radius:2px;"></div>
+                </div>
+            ` : '';
+            
+            html += `
+                <div style="padding:12px 0; border-bottom:1px solid var(--border-color);">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-size:24px;">${badge.icon}</span>
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:600; color:var(--text-primary);">${badge.name}</span>
+                                <span style="font-size:12px; color:${statusColor};">
+                                    ${statusIcon} ${badge.unlocked ? 'Sbloccato' : 'Bloccato'}
+                                </span>
+                            </div>
+                            <div style="font-size:12px; color:var(--text-secondary);">
+                                ${badge.description}
+                                ${badge.progress ? ` (${badge.progress})` : ''}
+                            </div>
+                            ${progressBar}
+                            ${badge.date ? `<div style="font-size:10px; color:var(--text-secondary); margin-top:4px;">Sbloccato il: ${new Date(badge.date).toLocaleDateString('it-IT')}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                <button onclick="closeClue()" style="margin-top:16px; padding:10px 20px; border-radius:12px; border:1px solid var(--border-color); background:transparent; color:var(--text-primary); cursor:pointer; width:100%;">
+                    Chiudi
+                </button>
+            </div>
+        `;
+
+        // Mostra il modale
+        const modal = document.getElementById('clue-modal');
+        if (modal) {
+            document.getElementById('modal-title').textContent = '🏅 Badge e Ricompense';
+            document.getElementById('modal-tag').textContent = 'Badge';
+            document.getElementById('modal-tag').className = 'modal-tag';
+            document.getElementById('modal-level').textContent = '';
+            document.getElementById('modal-clue').innerHTML = html;
+            document.getElementById('modal-dist').textContent = '';
+            document.getElementById('modal-bonus').style.display = 'none';
+            
+            document.querySelector('.modal-actions').style.display = 'none';
+            document.querySelector('.btn-danger').style.display = 'none';
+            
+            modal.classList.add('show');
+        } else {
+            showToast('🏅 Badge caricati');
+        }
+
+    } catch (error) {
+        console.error('❌ Errore badge:', error);
+        showToast('❌ Errore nel caricamento dei badge');
+    }
+}
+
 // ============================================================
 // PROFILO - PULSANTI
 // ============================================================
 
-
-function openBadges() {
-    showToast('🏅 Badge e Ricompense - In sviluppo');
-}
 
 function openIdentityVerification() {
     showToast('🔐 Verifica Identità - In sviluppo');
@@ -1049,7 +1143,6 @@ function openCityLeaderboard() {
 // ============================================================
 // ESPORTA FUNZIONI PROFILO (per uso globale)
 // ============================================================
-window.openBadges = openBadges;
 window.openIdentityVerification = openIdentityVerification;
 window.openSecurityCenter = openSecurityCenter;
 window.openPrivacySettings = openPrivacySettings;
@@ -1071,6 +1164,7 @@ window.logout = logout;
 window.showToast = showToast;
 window.openTreasureHistory = openTreasureHistory;
 window.closeClue = closeClue;
+window.openBadges = openBadges;
 
 // Auth UI
 window.handleLogin = handleLogin;

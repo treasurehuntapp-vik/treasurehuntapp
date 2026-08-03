@@ -156,4 +156,149 @@ router.get('/treasure-history', authMiddleware, async (req, res) => {
     }
 });
 
+// ============================================================
+// OTTIENI BADGE E RICOMPENSE DELL'UTENTE
+// ============================================================
+router.get('/badges', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = req.user;
+
+        // Calcola i badge in base ai dati dell'utente
+        const badges = [];
+        const found = user.treasures_found || 0;
+        const hidden = user.treasures_hidden || 0;
+        const karma = user.karma || 0;
+
+        // Badge: Esploratore (sempre sbloccato)
+        badges.push({
+            id: 'explorer',
+            name: 'Esploratore',
+            icon: '🧭',
+            description: 'Hai iniziato la tua avventura!',
+            unlocked: true,
+            date: user.created_at
+        });
+
+        // Badge: Cacciatore (5 tesori trovati)
+        if (found >= 5) {
+            badges.push({
+                id: 'hunter',
+                name: 'Cacciatore',
+                icon: '🏹',
+                description: 'Hai trovato 5 tesori!',
+                unlocked: true
+            });
+        } else {
+            badges.push({
+                id: 'hunter',
+                name: 'Cacciatore',
+                icon: '🏹',
+                description: `Trova ${5 - found} tesori per sbloccare`,
+                unlocked: false,
+                progress: `${found}/5`
+            });
+        }
+
+        // Badge: Maestro (20 tesori trovati)
+        if (found >= 20) {
+            badges.push({
+                id: 'master',
+                name: 'Maestro',
+                icon: '🏆',
+                description: 'Hai trovato 20 tesori!',
+                unlocked: true
+            });
+        } else {
+            badges.push({
+                id: 'master',
+                name: 'Maestro',
+                icon: '🏆',
+                description: `Trova ${20 - found} tesori per sbloccare`,
+                unlocked: false,
+                progress: `${found}/20`
+            });
+        }
+
+        // Badge: Leggenda (50 tesori trovati)
+        if (found >= 50) {
+            badges.push({
+                id: 'legend',
+                name: 'Leggenda',
+                icon: '👑',
+                description: 'Hai trovato 50 tesori!',
+                unlocked: true
+            });
+        } else {
+            badges.push({
+                id: 'legend',
+                name: 'Leggenda',
+                icon: '👑',
+                description: `Trova ${50 - found} tesori per sbloccare`,
+                unlocked: false,
+                progress: `${found}/50`
+            });
+        }
+
+        // Badge: Collezionista (3 tesori nascosti)
+        if (hidden >= 3) {
+            badges.push({
+                id: 'collector',
+                name: 'Collezionista',
+                icon: '📚',
+                description: 'Hai nascosto 3 tesori!',
+                unlocked: true
+            });
+        } else {
+            badges.push({
+                id: 'collector',
+                name: 'Collezionista',
+                icon: '📚',
+                description: `Nascondi ${3 - hidden} tesori per sbloccare`,
+                unlocked: false,
+                progress: `${hidden}/3`
+            });
+        }
+
+        // Badge: Architetto (10 tesori nascosti)
+        if (hidden >= 10) {
+            badges.push({
+                id: 'architect',
+                name: 'Architetto',
+                icon: '🏛️',
+                description: 'Hai nascosto 10 tesori!',
+                unlocked: true
+            });
+        } else {
+            badges.push({
+                id: 'architect',
+                name: 'Architetto',
+                icon: '🏛️',
+                description: `Nascondi ${10 - hidden} tesori per sbloccare`,
+                unlocked: false,
+                progress: `${hidden}/10`
+            });
+        }
+
+        // Ordina: prima gli sbloccati, poi quelli con più progresso
+        badges.sort((a, b) => {
+            if (a.unlocked && !b.unlocked) return -1;
+            if (!a.unlocked && b.unlocked) return 1;
+            return 0;
+        });
+
+        res.json({
+            success: true,
+            data: badges
+        });
+
+    } catch (error) {
+        console.error('❌ Errore badge:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Errore nel recupero dei badge'
+        });
+    }
+});
+
 export default router;
