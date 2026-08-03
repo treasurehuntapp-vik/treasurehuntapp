@@ -941,49 +941,7 @@ window.loadRealTreasures = loadRealTreasures;
 window.generateStartersForUser = generateStartersForUser;
 window.clearTreasureMarkers = clearTreasureMarkers;
 window.addRealTreasureMarker = addRealTreasureMarker;
-// ============================================================
-// PROFILO - PULSANTI (solo queste funzioni)
-// ============================================================
 
-function openTreasureHistory() {
-    console.log('📜 Apertura cronologia tesori...');
-    showToast('📜 Cronologia tesori - Funzionalità in sviluppo');
-}
-
-function openBadges() {
-    console.log('🏅 Apertura badge e ricompense...');
-    showToast('🏅 Badge e Ricompense - Funzionalità in sviluppo');
-}
-
-function openIdentityVerification() {
-    console.log('🔐 Apertura verifica identità...');
-    showToast('🔐 Verifica Identità - Funzionalità in sviluppo');
-}
-
-function openSecurityCenter() {
-    console.log('🛡️ Apertura centro sicurezza...');
-    showToast('🛡️ Centro Sicurezza - Funzionalità in sviluppo');
-}
-
-function openPrivacySettings() {
-    console.log('⚙️ Apertura impostazioni privacy...');
-    showToast('⚙️ Impostazioni Privacy - Funzionalità in sviluppo');
-}
-
-function openCityLeaderboard() {
-    console.log('🏆 Apertura classifica cittadina...');
-    goTo('leaderboard');
-}
-
-// ============================================================
-// ESPORTA FUNZIONI PROFILO (per uso globale)
-// ============================================================
-window.openTreasureHistory = openTreasureHistory;
-window.openBadges = openBadges;
-window.openIdentityVerification = openIdentityVerification;
-window.openSecurityCenter = openSecurityCenter;
-window.openPrivacySettings = openPrivacySettings;
-window.openCityLeaderboard = openCityLeaderboard;
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
 console.log('  - registerUser(), loginUser()');
