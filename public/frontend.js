@@ -7,6 +7,10 @@ const API_URL = 'https://caccia-tesoro-backend.onrender.com/api';
 let currentToken = null;
 let currentUser = null;
 
+// Variabili per il caricamento foto
+let hidePhotoFile = null;
+let hidePhotoDataUrl = null;
+
 // ============================================================
 // 1. REGISTRAZIONE
 // ============================================================
@@ -370,7 +374,6 @@ async function handleLogin() {
         showAuthMessage('✅ Login effettuato!');
         updateUIForLoggedInUser();
         updateProfileUI();
-        // Avvia l'app dopo il login
         setTimeout(() => startApp(), 500);
     } else {
         showAuthMessage('❌ Login fallito. Controlla le credenziali.', true);
@@ -394,7 +397,6 @@ async function handleRegister() {
         showAuthMessage('✅ Registrazione completata!');
         updateUIForLoggedInUser();
         updateProfileUI();
-        // Avvia l'app dopo la registrazione
         setTimeout(() => startApp(), 500);
     } else {
         showAuthMessage('❌ Registrazione fallita. Email già in uso?', true);
@@ -426,19 +428,41 @@ async function updateProfileUI() {
         const profile = await getUserProfile();
         if (profile) {
             document.getElementById('profile-name').textContent = profile.name || profile.email;
-            const levelLabel = profile.trust_level === 'legend' ? 'Leggenda' :
-                profile.trust_level === 'master' ? 'Maestro' :
-                profile.trust_level === 'hunter' ? 'Cacciatore' : 'Esploratore';
-            document.getElementById('profile-level').textContent =
-                `🟢 ${levelLabel} · Livello ${Math.floor((profile.karma || 0) / 100) + 1}`;
+            
+            let levelLabel = 'Esploratore';
+            let nextLevelKarma = 100;
+            
+            if (profile.karma >= 100) {
+                levelLabel = 'Cacciatore';
+                nextLevelKarma = 500;
+            }
+            if (profile.karma >= 500) {
+                levelLabel = 'Maestro';
+                nextLevelKarma = Infinity;
+            }
+            
+            document.getElementById('profile-level').textContent = `🟢 ${levelLabel} · Livello ${Math.floor(profile.karma / 100) + 1}`;
             document.getElementById('profile-found').textContent = profile.treasures_found || 0;
             document.getElementById('profile-karma').textContent = profile.karma || 0;
             document.getElementById('profile-streak').textContent = profile.streak_days || 0;
-            const progress = profile.levelProgress || {};
-            document.getElementById('profile-progress-text').textContent =
-                `${profile.karma || 0} / ${progress.nextKarmaNeeded + profile.karma || 500} Karma`;
-            document.getElementById('profile-progress-bar').style.width =
-                `${Math.min(progress.progress || 0, 100)}%`;
+            
+            const currentKarma = profile.karma || 0;
+            let progressText = '';
+            let progressPercent = 0;
+            
+            if (currentKarma < 100) {
+                progressText = `${currentKarma} / 100 Karma`;
+                progressPercent = (currentKarma / 100) * 100;
+            } else if (currentKarma < 500) {
+                progressText = `${currentKarma} / 500 Karma`;
+                progressPercent = (currentKarma / 500) * 100;
+            } else {
+                progressText = '🏆 Livello Massimo!';
+                progressPercent = 100;
+            }
+            
+            document.getElementById('profile-progress-text').textContent = progressText;
+            document.getElementById('profile-progress-bar').style.width = `${Math.min(progressPercent, 100)}%`;
             document.getElementById('level-badge').textContent = `🟢 ${levelLabel}`;
         }
     } catch (error) {
@@ -580,7 +604,6 @@ async function generateStartersForUser(lat, lng) {
 async function startApp() {
     console.log('🚀 Avvio applicazione...');
     
-    // Verifica se l'utente è loggato
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
     
@@ -594,7 +617,6 @@ async function startApp() {
         return;
     }
     
-    // Mostra la schermata della mappa
     const homeScreen = document.getElementById('screen-home');
     const mapScreen = document.getElementById('screen-map');
     
@@ -603,7 +625,6 @@ async function startApp() {
         mapScreen.style.transform = 'translateY(0)';
         console.log('🗺️ Mappa visualizzata');
         
-        // Ottieni la posizione corrente
         let lat = 45.4660;
         let lng = 7.8830;
         
@@ -623,10 +644,8 @@ async function startApp() {
             }
         }
         
-        // 🔥 PASSO 1: Genera i tesori starter (se necessario)
         await generateStartersForUser(lat, lng);
         
-        // 🔥 PASSO 2: Inizializza la mappa
         setTimeout(() => {
             if (typeof initMap === 'function') {
                 initMap();
@@ -635,7 +654,6 @@ async function startApp() {
             }
         }, 300);
         
-        // 🔥 PASSO 3: Carica i tesori (ora dovrebbero esserci gli starter)
         setTimeout(() => {
             loadRealTreasures();
         }, 1500);
@@ -662,7 +680,6 @@ async function loadRealTreasures() {
     }
 
     try {
-        // Ottieni la posizione corrente
         let lat = 45.4660;
         let lng = 7.8830;
         
@@ -682,7 +699,6 @@ async function loadRealTreasures() {
             }
         }
         
-        // 🔥 Usa getNearbyTreasures per caricare i tesori
         const treasures = await getNearbyTreasures(lat, lng, 10000);
         console.log('📦 Risultato getNearbyTreasures:', treasures);
 
@@ -903,6 +919,115 @@ function addRealTreasureMarker(treasure) {
 }
 
 // ============================================================
+// 20. PROFILO - GESTIONE PULSANTI
+// ============================================================
+
+// 1. Cronologia Tesori
+async function openTreasureHistory() {
+    console.log('📜 Apertura cronologia tesori...');
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showToast('⚠️ Devi essere loggato');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/treasure-history`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+            let historyHtml = '<div style="padding:20px;"><h3>📜 Cronologia Tesori</h3>';
+            data.data.forEach(t => {
+                historyHtml += `
+                    <div style="padding:10px;border-bottom:1px solid var(--border-color);">
+                        <strong>${t.title}</strong> - ${t.status === 'found' ? '✅ Trovato' : '📦 Nascosto'}
+                        <br><small>${new Date(t.created_at).toLocaleDateString()}</small>
+                    </div>
+                `;
+            });
+            historyHtml += '</div>';
+            showToast('📜 Cronologia tesori caricata!');
+            // TODO: Aprire una schermata dedicata
+        } else {
+            showToast('📭 Nessun tesoro trovato o nascosto');
+        }
+    } catch (error) {
+        console.error('Errore cronologia:', error);
+        showToast('❌ Errore nel caricamento della cronologia');
+    }
+}
+
+// 2. Badge e Ricompense
+async function openBadges() {
+    console.log('🏅 Apertura badge e ricompense...');
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showToast('⚠️ Devi essere loggato');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/badges`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+            let badgesHtml = '<div style="padding:20px;"><h3>🏅 Badge e Ricompense</h3>';
+            data.data.forEach(badge => {
+                badgesHtml += `
+                    <div style="padding:10px;border-bottom:1px solid var(--border-color);">
+                        ${badge.icon || '🏅'} <strong>${badge.name}</strong>
+                        <br><small>${badge.description || ''}</small>
+                    </div>
+                `;
+            });
+            badgesHtml += '</div>';
+            showToast('🏅 Badge caricati!');
+        } else {
+            showToast('🏅 Nessun badge sbloccato');
+        }
+    } catch (error) {
+        console.error('Errore badge:', error);
+        showToast('❌ Errore nel caricamento dei badge');
+    }
+}
+
+// 3. Verifica Identità (SPID/CIE)
+function openIdentityVerification() {
+    console.log('🔐 Apertura verifica identità...');
+    showToast('🔐 Verifica Identità - Funzionalità in sviluppo');
+}
+
+// 4. Centro Sicurezza
+function openSecurityCenter() {
+    console.log('🛡️ Apertura centro sicurezza...');
+    showToast('🛡️ Centro Sicurezza - Funzionalità in sviluppo');
+}
+
+// 5. Impostazioni Privacy
+function openPrivacySettings() {
+    console.log('⚙️ Apertura impostazioni privacy...');
+    showToast('⚙️ Impostazioni Privacy - Funzionalità in sviluppo');
+}
+
+// 6. Classifica cittadina
+function openCityLeaderboard() {
+    console.log('🏆 Apertura classifica cittadina...');
+    goTo('leaderboard');
+}
+
+// ============================================================
 // ESPORTA FUNZIONI (per uso globale)
 // ============================================================
 window.registerUser = registerUser;
@@ -942,6 +1067,14 @@ window.generateStartersForUser = generateStartersForUser;
 window.clearTreasureMarkers = clearTreasureMarkers;
 window.addRealTreasureMarker = addRealTreasureMarker;
 
+// Profilo - Pulsanti
+window.openTreasureHistory = openTreasureHistory;
+window.openBadges = openBadges;
+window.openIdentityVerification = openIdentityVerification;
+window.openSecurityCenter = openSecurityCenter;
+window.openPrivacySettings = openPrivacySettings;
+window.openCityLeaderboard = openCityLeaderboard;
+
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
 console.log('  - registerUser(), loginUser()');
@@ -951,4 +1084,9 @@ console.log('  - handleLogin(), handleRegister(), handleLogout()');
 console.log('  - startApp() - Avvia la mappa e genera starter');
 console.log('  - loadRealTreasures() - Carica i tesori');
 console.log('  - generateStartersForUser() - Genera tesori starter');
+console.log('  - openTreasureHistory() - Cronologia tesori');
+console.log('  - openBadges() - Badge e ricompense');
+console.log('  - openSecurityCenter() - Centro sicurezza');
+console.log('  - openPrivacySettings() - Impostazioni privacy');
+console.log('  - openCityLeaderboard() - Classifica cittadina');
 console.log('  - AudioSystem - Gestione audio');
