@@ -1,4 +1,3 @@
-
 // ============================================================
 // FRONTEND - Connessione al Backend
 // ============================================================
@@ -7,6 +6,10 @@
 const API_URL = 'https://caccia-tesoro-backend.onrender.com/api';
 let currentToken = null;
 let currentUser = null;
+
+// Variabili per il caricamento foto
+let hidePhotoFile = null;
+let hidePhotoDataUrl = null;
 
 // Variabili per la mappa
 let map = null;
@@ -482,6 +485,7 @@ async function updateProfileUI() {
         }
     } catch (error) {
         console.error('Errore caricamento profilo:', error);
+        return;
     }
 }
 
@@ -1722,7 +1726,160 @@ async function loadLeaderboard(filter = 'all') {
 }
 
 // ============================================================
-// 28. ESPORTA FUNZIONI (per uso globale)
+// 28. CARICAMENTO FOTO - FUNZIONI COMPLETE (definite qui per sicurezza)
+// ============================================================
+
+// Inizializza il listener per il cambio file
+function initHidePhoto() {
+    const input = document.getElementById('hide-photo-input');
+    if (!input) {
+        console.error('❌ Input file non trovato');
+        return;
+    }
+    
+    input.removeEventListener('change', handleFileSelect);
+    input.addEventListener('change', handleFileSelect);
+    console.log('📸 Input file inizializzato correttamente');
+}
+
+// Gestisce la selezione del file
+function handleFileSelect(e) {
+    console.log('📸 Evento change catturato!');
+    
+    const input = e.target;
+    const file = input.files[0];
+    
+    if (!file) {
+        console.log('⚠️ Nessun file selezionato');
+        return;
+    }
+    
+    console.log('📸 File selezionato:', file.name, file.size, file.type);
+    
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('❌ La foto è troppo grande (max 5MB)');
+        input.value = '';
+        return;
+    }
+    
+    if (!file.type.startsWith('image/')) {
+        showToast('❌ Il file deve essere un\'immagine');
+        input.value = '';
+        return;
+    }
+    
+    hidePhotoFile = file;
+    console.log('📸 File salvato in hidePhotoFile');
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        console.log('📸 FileReader completato');
+        hidePhotoDataUrl = event.target.result;
+        
+        const img = document.getElementById('hide-photo-image');
+        const placeholder = document.getElementById('hide-photo-placeholder');
+        const preview = document.getElementById('hide-photo-preview');
+        const removeBtn = document.getElementById('hide-photo-remove');
+        
+        if (img) {
+            img.src = event.target.result;
+            img.style.display = 'block';
+        }
+        if (placeholder) {
+            placeholder.style.display = 'none';
+        }
+        if (preview) {
+            preview.classList.add('has-image');
+        }
+        if (removeBtn) {
+            removeBtn.style.display = 'block';
+        }
+        
+        showToast('✅ Foto caricata!');
+        console.log('📸 Anteprima visualizzata');
+    };
+    
+    reader.onerror = function() {
+        console.error('❌ Errore FileReader');
+        showToast('❌ Errore nella lettura del file');
+    };
+    
+    reader.readAsDataURL(file);
+    
+    input.value = '';
+}
+
+// Apre il selettore di file (chiamato dal pulsante)
+function triggerFileInput() {
+    console.log('📸 triggerFileInput chiamato');
+    
+    const input = document.getElementById('hide-photo-input');
+    if (!input) {
+        console.error('❌ Input file non trovato');
+        showToast('⚠️ Errore: input non trovato');
+        return;
+    }
+    
+    // 🔥 FIX: Reset del valore prima di aprire
+    input.value = '';
+    input.click();
+    console.log('📸 File input aperto (resettato)');
+}
+
+// Rimuove la foto selezionata
+function clearHidePhoto() {
+    console.log('🗑️ Rimozione foto');
+    
+    hidePhotoFile = null;
+    hidePhotoDataUrl = null;
+    
+    const img = document.getElementById('hide-photo-image');
+    const placeholder = document.getElementById('hide-photo-placeholder');
+    const preview = document.getElementById('hide-photo-preview');
+    const removeBtn = document.getElementById('hide-photo-remove');
+    const input = document.getElementById('hide-photo-input');
+    
+    if (img) {
+        img.src = '';
+        img.style.display = 'none';
+    }
+    if (placeholder) {
+        placeholder.style.display = 'block';
+    }
+    if (preview) {
+        preview.classList.remove('has-image');
+    }
+    if (removeBtn) {
+        removeBtn.style.display = 'none';
+    }
+    if (input) {
+        input.value = '';
+    }
+    
+    showToast('🗑️ Foto rimossa');
+}
+
+// Salva la foto e passa allo step 2
+function saveHidePhotoAndGoToStep2() {
+    console.log('📸 Verifica foto:', hidePhotoFile ? '✅ File presente' : '❌ NESSUN FILE');
+    
+    if (!hidePhotoFile) {
+        showToast('⚠️ Carica una foto dell\'oggetto');
+        return;
+    }
+    
+    if (!window.tempTreasureData) {
+        window.tempTreasureData = {};
+    }
+    window.tempTreasureData.photoFile = hidePhotoFile;
+    window.tempTreasureData.photoDataUrl = hidePhotoDataUrl;
+    
+    console.log('📸 Dati foto salvati in tempTreasureData');
+    goToStep(2);
+}
+
+// ============================================================
+// 29. ESPORTA FUNZIONI (per uso globale)
 // ============================================================
 window.registerUser = registerUser;
 window.loginUser = loginUser;
@@ -1789,6 +1946,13 @@ window.saveTreasureDataAndGoToStep4 = saveTreasureDataAndGoToStep4;
 window.updateStep4Preview = updateStep4Preview;
 window.createTreasureFromForm = createTreasureFromForm;
 
+// Caricamento foto
+window.initHidePhoto = initHidePhoto;
+window.handleFileSelect = handleFileSelect;
+window.triggerFileInput = triggerFileInput;
+window.clearHidePhoto = clearHidePhoto;
+window.saveHidePhotoAndGoToStep2 = saveHidePhotoAndGoToStep2;
+
 // Profilo - Pulsanti
 window.openTreasureHistory = openTreasureHistory;
 window.openBadges = openBadges;
@@ -1799,10 +1963,6 @@ window.openCityLeaderboard = openCityLeaderboard;
 
 // Classifica
 window.loadLeaderboard = loadLeaderboard;
-
-// ⚠️ NOTA: Le funzioni per il caricamento foto NON sono qui perché sono già definite nel file index.html
-// triggerFileInput, handleFileSelect, initHidePhoto, clearHidePhoto, saveHidePhotoAndGoToStep2
-// Sono gestite direttamente dall'HTML per evitare conflitti.
 
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
@@ -1816,6 +1976,7 @@ console.log('  - generateStartersForUser() - Genera tesori starter');
 console.log('  - initMap() - Inizializza la mappa');
 console.log('  - goTo() - Navigazione tra schermate');
 console.log('  - openClue() - Apre l\'indizio del tesoro');
+console.log('  - triggerFileInput() - Carica foto (FIX applicato!)');
 console.log('  - loadLeaderboard() - Carica la classifica');
 console.log('  - openTreasureHistory() - Cronologia tesori');
 console.log('  - openBadges() - Badge e ricompense');
@@ -1823,4 +1984,3 @@ console.log('  - openSecurityCenter() - Centro sicurezza');
 console.log('  - openPrivacySettings() - Impostazioni privacy');
 console.log('  - openCityLeaderboard() - Classifica cittadina');
 console.log('  - AudioSystem - Gestione audio');
-console.log('  - ⚠️ Caricamento foto gestito da index.html');
