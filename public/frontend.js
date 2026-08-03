@@ -941,6 +941,12 @@ window.loadRealTreasures = loadRealTreasures;
 window.generateStartersForUser = generateStartersForUser;
 window.clearTreasureMarkers = clearTreasureMarkers;
 window.addRealTreasureMarker = addRealTreasureMarker;
+window.openTreasureHistory = openTreasureHistory;
+window.openBadges = openBadges;
+window.openIdentityVerification = openIdentityVerification;
+window.openSecurityCenter = openSecurityCenter;
+window.openPrivacySettings = openPrivacySettings;
+window.openCityLeaderboard = openCityLeaderboard;
 
 // ============================================================
 // PROFILO - PULSANTI (Solo collegamento, nessuna logica complessa)
@@ -976,15 +982,6 @@ function openCityLeaderboard() {
     goTo('leaderboard');
 }
 
-// ============================================================
-// ESPORTA FUNZIONI PROFILO (per uso globale)
-// ============================================================
-window.openTreasureHistory = openTreasureHistory;
-window.openBadges = openBadges;
-window.openIdentityVerification = openIdentityVerification;
-window.openSecurityCenter = openSecurityCenter;
-window.openPrivacySettings = openPrivacySettings;
-window.openCityLeaderboard = openCityLeaderboard;
 
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
