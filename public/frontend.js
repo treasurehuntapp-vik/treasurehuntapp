@@ -1021,6 +1021,43 @@ function closeClue() {
         if (bonusEl) bonusEl.style.display = 'none';
     }
 }
+// ============================================================
+// PROFILO - PULSANTI
+// ============================================================
+
+function openTreasureHistory() {
+    showToast('📜 Cronologia tesori - In sviluppo');
+}
+
+function openBadges() {
+    showToast('🏅 Badge e Ricompense - In sviluppo');
+}
+
+function openIdentityVerification() {
+    showToast('🔐 Verifica Identità - In sviluppo');
+}
+
+function openSecurityCenter() {
+    showToast('🛡️ Centro Sicurezza - In sviluppo');
+}
+
+function openPrivacySettings() {
+    showToast('⚙️ Impostazioni Privacy - In sviluppo');
+}
+
+function openCityLeaderboard() {
+    goTo('leaderboard');
+}
+
+// ============================================================
+// ESPORTA FUNZIONI PROFILO (per uso globale)
+// ============================================================
+window.openTreasureHistory = openTreasureHistory;
+window.openBadges = openBadges;
+window.openIdentityVerification = openIdentityVerification;
+window.openSecurityCenter = openSecurityCenter;
+window.openPrivacySettings = openPrivacySettings;
+window.openCityLeaderboard = openCityLeaderboard;
 
 // ============================================================
 // ESPORTA FUNZIONI (per uso globale)
@@ -1036,7 +1073,6 @@ window.getLeaderboard = getLeaderboard;
 window.getKarmaHistory = getKarmaHistory;
 window.logout = logout;
 window.showToast = showToast;
-window.openTreasureHistory = openTreasureHistory;
 window.closeClue = closeClue;
 
 // Auth UI

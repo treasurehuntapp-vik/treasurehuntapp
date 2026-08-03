@@ -844,53 +844,35 @@
                 overlay.classList.add('active');
             }
         }
+
+// PROFILO - PULSANTI (definiti in frontend.js)
 // ============================================================
-        // PROFILO - PULSANTI
-        // ============================================================
-        function openTreasureHistory() {
-            showToast('📜 Cronologia tesori - In sviluppo');
-        }
-        function openBadges() {
-            showToast('🏅 Badge e Ricompense - In sviluppo');
-        }
-        function openIdentityVerification() {
-            showToast('🔐 Verifica Identità - In sviluppo');
-        }
-        function openSecurityCenter() {
-            showToast('🛡️ Centro Sicurezza - In sviluppo');
-        }
-        function openPrivacySettings() {
-            showToast('⚙️ Impostazioni Privacy - In sviluppo');
-        }
-        function openCityLeaderboard() {
-            goTo('leaderboard');
-        }
-        function goToStep(step) {
-            if (step < 1 || step > 4) return;
 
-            document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('step' + step).classList.add('active');
+function goToStep(step) {
+    if (step < 1 || step > 4) return;
 
-            document.querySelectorAll('.step-indicator .step').forEach(el => {
-                const s = parseInt(el.dataset.step);
-                el.classList.remove('active', 'done');
-                if (s === step) el.classList.add('active');
-                else if (s < step) el.classList.add('done');
-            });
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('step' + step).classList.add('active');
 
-            if (step === 2) {
-                setTimeout(() => initHideMap(), 300);
-            }
-        }
+    document.querySelectorAll('.step-indicator .step').forEach(el => {
+        const s = parseInt(el.dataset.step);
+        el.classList.remove('active', 'done');
+        if (s === step) el.classList.add('active');
+        else if (s < step) el.classList.add('done');
+    });
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').textContent = msg;
-            toast.classList.add('show');
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
-        }
+    if (step === 2) {
+        setTimeout(() => initHideMap(), 300);
+    }
+}
 
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
+}
         // ============================================================
         // GENERA TESORI STARTER
         // ============================================================
