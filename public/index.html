@@ -342,16 +342,14 @@
                     <div class="label"><span>Prossimo livello</span><span id="profile-progress-text">0 / 500 Karma</span></div>
                     <div class="bar"><div class="fill" id="profile-progress-bar" style="width:0%;"></div></div>
                 </div>
-                <div class="profile-menu">
-                    <div class="profile-menu-item"><span>📜 Cronologia Tesori</span><span class="arrow">›</span></div>
-                    <div class="profile-menu-item"><span>🏅 Badge e Ricompense</span><span class="arrow">›</span></div>
-                    <div class="profile-menu-item"><span>🔐 Verifica Identità (SPID/CIE)</span><span style="font-size:9px;color:var(--neon-green);font-weight:700;">✅ Verificato</span></div>
-                    <div class="profile-menu-item"><span>🛡️ Centro Sicurezza</span><span class="arrow">›</span></div>
-                    <div class="profile-menu-item"><span>⚙️ Impostazioni Privacy</span><span class="arrow">›</span></div>
-                    <div class="profile-menu-item" style="border-bottom:none;"><span>🏆 Classifica cittadina</span><span style="font-size:13px;color:var(--neon-gold);font-weight:700;">#3</span></div>
-                </div>
-            </div>
-        </div>
+       <div class="profile-menu">
+    <div class="profile-menu-item" onclick="openTreasureHistory()"><span>📜 Cronologia Tesori</span><span class="arrow">›</span></div>
+    <div class="profile-menu-item" onclick="openBadges()"><span>🏅 Badge e Ricompense</span><span class="arrow">›</span></div>
+    <div class="profile-menu-item" onclick="openIdentityVerification()"><span>🔐 Verifica Identità (SPID/CIE)</span><span style="font-size:9px;color:var(--neon-green);font-weight:700;">✅ Verificato</span></div>
+    <div class="profile-menu-item" onclick="openSecurityCenter()"><span>🛡️ Centro Sicurezza</span><span class="arrow">›</span></div>
+    <div class="profile-menu-item" onclick="openPrivacySettings()"><span>⚙️ Impostazioni Privacy</span><span class="arrow">›</span></div>
+    <div class="profile-menu-item" style="border-bottom:none;" onclick="openCityLeaderboard()"><span>🏆 Classifica cittadina</span><span style="font-size:13px;color:var(--neon-gold);font-weight:700;">#3</span></div>
+</div>
 
         <!-- NASCONDI -->
         <div id="screen-hide" class="screen">
@@ -844,7 +842,27 @@
                 overlay.classList.add('active');
             }
         }
-
+// ============================================================
+        // PROFILO - PULSANTI
+        // ============================================================
+        function openTreasureHistory() {
+            showToast('📜 Cronologia tesori - In sviluppo');
+        }
+        function openBadges() {
+            showToast('🏅 Badge e Ricompense - In sviluppo');
+        }
+        function openIdentityVerification() {
+            showToast('🔐 Verifica Identità - In sviluppo');
+        }
+        function openSecurityCenter() {
+            showToast('🛡️ Centro Sicurezza - In sviluppo');
+        }
+        function openPrivacySettings() {
+            showToast('⚙️ Impostazioni Privacy - In sviluppo');
+        }
+        function openCityLeaderboard() {
+            goTo('leaderboard');
+        }
         function goToStep(step) {
             if (step < 1 || step > 4) return;
 
