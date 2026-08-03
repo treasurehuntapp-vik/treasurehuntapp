@@ -1147,6 +1147,7 @@ window.openIdentityVerification = openIdentityVerification;
 window.openSecurityCenter = openSecurityCenter;
 window.openPrivacySettings = openPrivacySettings;
 window.openCityLeaderboard = openCityLeaderboard;
+window.closeClue = closeClue;
 
 // ============================================================
 // ESPORTA FUNZIONI (per uso globale)
