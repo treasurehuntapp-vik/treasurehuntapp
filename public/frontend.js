@@ -1228,17 +1228,12 @@ function openCityLeaderboard() {
     goTo('leaderboard');
 }
 
-// ============================================================
-// ESPORTA FUNZIONI PROFILO (per uso globale)
-// ============================================================
-window.openIdentityVerification = openIdentityVerification;
-window.openSecurityCenter = openSecurityCenter;
-window.openPrivacySettings = openPrivacySettings;
-window.openCityLeaderboard = openCityLeaderboard;
 
 // ============================================================
 // ESPORTA FUNZIONI (per uso globale)
 // ============================================================
+
+// ---------- FUNZIONI BASE ----------
 window.registerUser = registerUser;
 window.loginUser = loginUser;
 window.getUserProfile = getUserProfile;
@@ -1250,12 +1245,12 @@ window.getLeaderboard = getLeaderboard;
 window.getKarmaHistory = getKarmaHistory;
 window.logout = logout;
 window.showToast = showToast;
-window.openTreasureHistory = openTreasureHistory;
-window.closeClue = closeClue;
-window.openClue = openClue;
-window.openBadges = openBadges;
 
-// Auth UI
+// ---------- MODALE TESORI ----------
+window.openClue = openClue;
+window.closeClue = closeClue;
+
+// ---------- AUTH UI ----------
 window.handleLogin = handleLogin;
 window.handleRegister = handleRegister;
 window.handleLogout = handleLogout;
@@ -1263,22 +1258,30 @@ window.updateUIForLoggedInUser = updateUIForLoggedInUser;
 window.showAuthMessage = showAuthMessage;
 window.updateProfileUI = updateProfileUI;
 
-// Notifiche
+// ---------- NOTIFICHE ----------
 window.getNotifications = getNotifications;
 window.markNotificationRead = markNotificationRead;
 window.markAllNotificationsRead = markAllNotificationsRead;
 window.getUnreadCount = getUnreadCount;
 
-// Audio
+// ---------- AUDIO ----------
 window.AudioSystem = AudioSystem;
 window.toggleAudio = () => AudioSystem.toggleMute();
 
-// App - TESORI STARTER
+// ---------- APP - TESORI STARTER ----------
 window.startApp = startApp;
 window.loadRealTreasures = loadRealTreasures;
 window.generateStartersForUser = generateStartersForUser;
 window.clearTreasureMarkers = clearTreasureMarkers;
 window.addRealTreasureMarker = addRealTreasureMarker;
+
+// ---------- PROFILO - PULSANTI (✅ TUTTI QUI) ----------
+window.openTreasureHistory = openTreasureHistory;
+window.openBadges = openBadges;
+window.openIdentityVerification = openIdentityVerification;
+window.openSecurityCenter = openSecurityCenter;
+window.openPrivacySettings = openPrivacySettings;
+window.openCityLeaderboard = openCityLeaderboard;
 
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
