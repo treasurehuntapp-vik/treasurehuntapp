@@ -1147,7 +1147,6 @@ window.openIdentityVerification = openIdentityVerification;
 window.openSecurityCenter = openSecurityCenter;
 window.openPrivacySettings = openPrivacySettings;
 window.openCityLeaderboard = openCityLeaderboard;
-window.closeClue = closeClue;
 
 // ============================================================
 // ESPORTA FUNZIONI (per uso globale)
@@ -1165,7 +1164,6 @@ window.logout = logout;
 window.showToast = showToast;
 window.openTreasureHistory = openTreasureHistory;
 window.openBadges = openBadges;
-window.closeClue = closeClue;
 
 // Auth UI
 window.handleLogin = handleLogin;
