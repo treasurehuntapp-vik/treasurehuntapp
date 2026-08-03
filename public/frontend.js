@@ -1165,6 +1165,7 @@ window.logout = logout;
 window.showToast = showToast;
 window.openTreasureHistory = openTreasureHistory;
 window.openBadges = openBadges;
+window.closeClue = closeClue;
 
 // Auth UI
 window.handleLogin = handleLogin;
