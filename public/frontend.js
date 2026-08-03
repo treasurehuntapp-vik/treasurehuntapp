@@ -988,41 +988,6 @@ async function openTreasureHistory() {
 }
 
 // ============================================================
-// CHIUDI MODALE (con ripristino)
-// ============================================================
-
-function closeClue() {
-    const modal = document.getElementById('clue-modal');
-    if (modal) {
-        modal.classList.remove('show');
-        
-        // Ripristina i pulsanti per i tesori (se sono stati nascosti)
-        const actions = document.querySelector('.modal-actions');
-        const dangerBtn = document.querySelector('.btn-danger');
-        if (actions) actions.style.display = 'flex';
-        if (dangerBtn) dangerBtn.style.display = 'block';
-        
-        // Ripristina il contenuto del modale (per evitare che rimanga la cronologia)
-        const titleEl = document.getElementById('modal-title');
-        const tagEl = document.getElementById('modal-tag');
-        const levelEl = document.getElementById('modal-level');
-        const clueEl = document.getElementById('modal-clue');
-        const distEl = document.getElementById('modal-dist');
-        const bonusEl = document.getElementById('modal-bonus');
-        
-        if (titleEl) titleEl.textContent = 'Il Quaderno Perduto';
-        if (tagEl) {
-            tagEl.textContent = '🏴‍☠️ Tesoro Rilevato';
-            tagEl.className = 'modal-tag';
-        }
-        if (levelEl) levelEl.textContent = '📦 Tesoro Normale · Karma: 10';
-        if (clueEl) clueEl.textContent = '"Dove l\'acqua cantava e ora la pietra tace..."';
-        if (distEl) distEl.textContent = '150 m';
-        if (bonusEl) bonusEl.style.display = 'none';
-    }
-}
-
-// ============================================================
 // APRE IL MODALE CON L'INDIZIO DEL TESORO
 // ============================================================
 
@@ -1108,6 +1073,50 @@ function openClue(id) {
 
     modal.classList.add('show');
     console.log('✅ Modale aperto per:', t.title);
+}
+
+
+// ============================================================
+// CHIUDI MODALE (con ripristino)
+// ============================================================
+
+function closeClue() {
+    console.log('🔒 Chiusura modale e ripristino pulsanti');
+    
+    const modal = document.getElementById('clue-modal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    
+    // 🔥 FORZA IL RIPRISTINO DEI PULSANTI (anche se non esistono)
+    const actions = document.querySelector('.modal-actions');
+    const dangerBtn = document.querySelector('.btn-danger');
+    if (actions) {
+        actions.style.display = 'flex';
+        actions.style.visibility = 'visible';
+    }
+    if (dangerBtn) {
+        dangerBtn.style.display = 'block';
+        dangerBtn.style.visibility = 'visible';
+    }
+    
+    // Ripristina il contenuto del modale
+    const titleEl = document.getElementById('modal-title');
+    const tagEl = document.getElementById('modal-tag');
+    const levelEl = document.getElementById('modal-level');
+    const clueEl = document.getElementById('modal-clue');
+    const distEl = document.getElementById('modal-dist');
+    const bonusEl = document.getElementById('modal-bonus');
+    
+    if (titleEl) titleEl.textContent = 'Il Quaderno Perduto';
+    if (tagEl) {
+        tagEl.textContent = '🏴‍☠️ Tesoro Rilevato';
+        tagEl.className = 'modal-tag';
+    }
+    if (levelEl) levelEl.textContent = '📦 Tesoro Normale · Karma: 10';
+    if (clueEl) clueEl.textContent = '"Dove l\'acqua cantava e ora la pietra tace..."';
+    if (distEl) distEl.textContent = '150 m';
+    if (bonusEl) bonusEl.style.display = 'none';
 }
 
 // ============================================================
