@@ -11,6 +11,14 @@ let currentUser = null;
 let hidePhotoFile = null;
 let hidePhotoDataUrl = null;
 
+// Variabili per la mappa
+let map = null;
+let userMarker = null;
+let userPos = { lat: 45.4660, lng: 7.8830 };
+let isFollowing = false;
+let watchId = null;
+let treasureMarkers = [];
+
 // ============================================================
 // 1. REGISTRAZIONE
 // ============================================================
@@ -430,15 +438,10 @@ async function updateProfileUI() {
             document.getElementById('profile-name').textContent = profile.name || profile.email;
             
             let levelLabel = 'Esploratore';
-            let nextLevelKarma = 100;
-            
-            if (profile.karma >= 100) {
-                levelLabel = 'Cacciatore';
-                nextLevelKarma = 500;
-            }
             if (profile.karma >= 500) {
                 levelLabel = 'Maestro';
-                nextLevelKarma = Infinity;
+            } else if (profile.karma >= 100) {
+                levelLabel = 'Cacciatore';
             }
             
             document.getElementById('profile-level').textContent = `🟢 ${levelLabel} · Livello ${Math.floor(profile.karma / 100) + 1}`;
@@ -598,7 +601,143 @@ async function generateStartersForUser(lat, lng) {
 }
 
 // ============================================================
-// 15. START APP - Avvia l'applicazione
+// 15. MAPPA - FUNZIONI DI INIZIALIZZAZIONE
+// ============================================================
+
+function initMap() {
+    if (typeof L === 'undefined') {
+        console.error('❌ Leaflet non caricato!');
+        showToast('⚠️ Errore: libreria mappa non disponibile');
+        return;
+    }
+    
+    if (map) {
+        console.log('ℹ️ Mappa già esistente');
+        return;
+    }
+    
+    const container = document.getElementById('map-container');
+    if (!container) {
+        console.error('❌ Contenitore mappa non trovato!');
+        return;
+    }
+    
+    try {
+        map = L.map('map-container', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([userPos.lat, userPos.lng], 16);
+
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const tileLayer = currentTheme === 'dark' ?
+            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+        L.tileLayer(tileLayer, {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+        }).addTo(map);
+
+        addUserMarker();
+        startGPS();
+
+        map.on('dragstart', function() {
+            if (isFollowing) {
+                isFollowing = false;
+                document.getElementById('btnCenter').classList.remove('active');
+                document.getElementById('btnCenter').innerHTML = '🎯';
+            }
+        });
+
+        setTimeout(() => {
+            if (map) map.invalidateSize();
+            console.log('✅ Mappa inizializzata correttamente');
+            loadRealTreasures();
+        }, 500);
+
+    } catch (error) {
+        console.error('❌ Errore inizializzazione mappa:', error);
+        showToast('❌ Errore nel caricamento della mappa');
+    }
+}
+
+function addUserMarker() {
+    if (!map) return;
+    
+    const userIcon = L.divIcon({
+        className: 'user-marker',
+        html: `<div style="width:16px;height:16px;background:#39ff14;border-radius:50%;border:3px solid #fff;box-shadow:0 0 20px rgba(57,255,20,0.6);"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+
+    userMarker = L.marker([userPos.lat, userPos.lng], {
+        icon: userIcon,
+        zIndexOffset: 1000
+    }).addTo(map);
+}
+
+function startGPS() {
+    if (!navigator.geolocation) {
+        console.log('⚠️ GPS non supportato');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const { latitude, longitude } = pos.coords;
+            updateUserPosition(latitude, longitude);
+            if (map) map.setView([latitude, longitude], 16);
+            console.log('📍 GPS acquisito:', latitude, longitude);
+        },
+        () => {
+            console.log('⚠️ GPS non disponibile, posizione simulata (Ivrea)');
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000
+        }
+    );
+
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+            const { latitude, longitude } = pos.coords;
+            updateUserPosition(latitude, longitude);
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+}
+
+function updateUserPosition(lat, lng) {
+    userPos.lat = lat;
+    userPos.lng = lng;
+    if (userMarker) {
+        userMarker.setLatLng([lat, lng]);
+    }
+    if (isFollowing && map) {
+        map.setView([lat, lng], map.getZoom());
+    }
+}
+
+function centerOnUser() {
+    if (!map) return;
+    isFollowing = !isFollowing;
+    const btn = document.getElementById('btnCenter');
+    if (isFollowing) {
+        btn.classList.add('active');
+        btn.innerHTML = '📍';
+        map.setView([userPos.lat, userPos.lng], 16);
+        showToast('📍 Follow attivo');
+    } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '🎯';
+        showToast('🗺️ Esplorazione libera');
+    }
+}
+
+// ============================================================
+// 16. START APP - Avvia l'applicazione
 // ============================================================
 
 async function startApp() {
@@ -650,7 +789,14 @@ async function startApp() {
             if (typeof initMap === 'function') {
                 initMap();
             } else {
-                console.warn('⚠️ initMap non definita, assicurati che sia definita nel DOM');
+                console.warn('⚠️ initMap non definita');
+                if (typeof L !== 'undefined') {
+                    console.log('✅ Leaflet disponibile, inizializzo mappa...');
+                    initMap();
+                } else {
+                    console.error('❌ Leaflet non disponibile!');
+                    showToast('❌ Errore: mappa non disponibile');
+                }
             }
         }, 300);
         
@@ -663,7 +809,7 @@ async function startApp() {
 }
 
 // ============================================================
-// 16. CARICA TESORI REALI DAL BACKEND
+// 17. CARICA TESORI REALI DAL BACKEND
 // ============================================================
 
 async function loadRealTreasures() {
@@ -722,7 +868,7 @@ async function loadRealTreasures() {
 }
 
 // ============================================================
-// 17. SISTEMA AUDIO
+// 18. SISTEMA AUDIO
 // ============================================================
 
 const AudioSystem = {
@@ -791,7 +937,7 @@ const AudioSystem = {
 };
 
 // ============================================================
-// 18. FUNZIONE PER PULIRE I MARKER (dichiarata per sicurezza)
+// 19. FUNZIONE PER PULIRE I MARKER
 // ============================================================
 
 function clearTreasureMarkers() {
@@ -804,7 +950,7 @@ function clearTreasureMarkers() {
 }
 
 // ============================================================
-// 19. FUNZIONE PER AGGIUNGERE MARKER (dichiarata per sicurezza)
+// 20. FUNZIONE PER AGGIUNGERE MARKER
 // ============================================================
 
 function addRealTreasureMarker(treasure) {
@@ -919,109 +1065,34 @@ function addRealTreasureMarker(treasure) {
 }
 
 // ============================================================
-// 20. PROFILO - GESTIONE PULSANTI
+// 21. PROFILO - GESTIONE PULSANTI
 // ============================================================
 
-// 1. Cronologia Tesori
 async function openTreasureHistory() {
     console.log('📜 Apertura cronologia tesori...');
-    
-    const token = localStorage.getItem('token');
-    if (!token) {
-        showToast('⚠️ Devi essere loggato');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/users/treasure-history`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success && data.data && data.data.length > 0) {
-            let historyHtml = '<div style="padding:20px;"><h3>📜 Cronologia Tesori</h3>';
-            data.data.forEach(t => {
-                historyHtml += `
-                    <div style="padding:10px;border-bottom:1px solid var(--border-color);">
-                        <strong>${t.title}</strong> - ${t.status === 'found' ? '✅ Trovato' : '📦 Nascosto'}
-                        <br><small>${new Date(t.created_at).toLocaleDateString()}</small>
-                    </div>
-                `;
-            });
-            historyHtml += '</div>';
-            showToast('📜 Cronologia tesori caricata!');
-            // TODO: Aprire una schermata dedicata
-        } else {
-            showToast('📭 Nessun tesoro trovato o nascosto');
-        }
-    } catch (error) {
-        console.error('Errore cronologia:', error);
-        showToast('❌ Errore nel caricamento della cronologia');
-    }
+    showToast('📜 Cronologia tesori - Funzionalità in sviluppo');
 }
 
-// 2. Badge e Ricompense
 async function openBadges() {
     console.log('🏅 Apertura badge e ricompense...');
-    
-    const token = localStorage.getItem('token');
-    if (!token) {
-        showToast('⚠️ Devi essere loggato');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/users/badges`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success && data.data && data.data.length > 0) {
-            let badgesHtml = '<div style="padding:20px;"><h3>🏅 Badge e Ricompense</h3>';
-            data.data.forEach(badge => {
-                badgesHtml += `
-                    <div style="padding:10px;border-bottom:1px solid var(--border-color);">
-                        ${badge.icon || '🏅'} <strong>${badge.name}</strong>
-                        <br><small>${badge.description || ''}</small>
-                    </div>
-                `;
-            });
-            badgesHtml += '</div>';
-            showToast('🏅 Badge caricati!');
-        } else {
-            showToast('🏅 Nessun badge sbloccato');
-        }
-    } catch (error) {
-        console.error('Errore badge:', error);
-        showToast('❌ Errore nel caricamento dei badge');
-    }
+    showToast('🏅 Badge e Ricompense - Funzionalità in sviluppo');
 }
 
-// 3. Verifica Identità (SPID/CIE)
 function openIdentityVerification() {
     console.log('🔐 Apertura verifica identità...');
     showToast('🔐 Verifica Identità - Funzionalità in sviluppo');
 }
 
-// 4. Centro Sicurezza
 function openSecurityCenter() {
     console.log('🛡️ Apertura centro sicurezza...');
     showToast('🛡️ Centro Sicurezza - Funzionalità in sviluppo');
 }
 
-// 5. Impostazioni Privacy
 function openPrivacySettings() {
     console.log('⚙️ Apertura impostazioni privacy...');
     showToast('⚙️ Impostazioni Privacy - Funzionalità in sviluppo');
 }
 
-// 6. Classifica cittadina
 function openCityLeaderboard() {
     console.log('🏆 Apertura classifica cittadina...');
     goTo('leaderboard');
@@ -1067,6 +1138,10 @@ window.generateStartersForUser = generateStartersForUser;
 window.clearTreasureMarkers = clearTreasureMarkers;
 window.addRealTreasureMarker = addRealTreasureMarker;
 
+// Mappa
+window.initMap = initMap;
+window.centerOnUser = centerOnUser;
+
 // Profilo - Pulsanti
 window.openTreasureHistory = openTreasureHistory;
 window.openBadges = openBadges;
@@ -1084,6 +1159,7 @@ console.log('  - handleLogin(), handleRegister(), handleLogout()');
 console.log('  - startApp() - Avvia la mappa e genera starter');
 console.log('  - loadRealTreasures() - Carica i tesori');
 console.log('  - generateStartersForUser() - Genera tesori starter');
+console.log('  - initMap() - Inizializza la mappa');
 console.log('  - openTreasureHistory() - Cronologia tesori');
 console.log('  - openBadges() - Badge e ricompense');
 console.log('  - openSecurityCenter() - Centro sicurezza');
