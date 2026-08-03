@@ -1164,7 +1164,6 @@ window.getKarmaHistory = getKarmaHistory;
 window.logout = logout;
 window.showToast = showToast;
 window.openTreasureHistory = openTreasureHistory;
-window.closeClue = closeClue;
 window.openBadges = openBadges;
 
 // Auth UI
