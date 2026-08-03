@@ -1183,24 +1183,30 @@ async function openBadges() {
         `;
 
         // Mostra il modale
-        const modal = document.getElementById('clue-modal');
-        if (modal) {
-            document.getElementById('modal-title').textContent = '🏅 Badge e Ricompense';
-            document.getElementById('modal-tag').textContent = 'Badge';
-            document.getElementById('modal-tag').className = 'modal-tag';
-            document.getElementById('modal-level').textContent = '';
-            document.getElementById('modal-clue').innerHTML = html;
-            document.getElementById('modal-dist').textContent = '';
-            document.getElementById('modal-bonus').style.display = 'none';
-            
-            document.querySelector('.modal-actions').style.display = 'none';
-            document.querySelector('.btn-danger').style.display = 'none';
-            
-            modal.classList.add('show');
-        } else {
-            showToast('🏅 Badge caricati');
+const modal = document.getElementById('clue-modal');
+if (modal) {
+    document.getElementById('modal-title').textContent = '🏅 Badge e Ricompense';
+    document.getElementById('modal-tag').textContent = 'Badge';
+    document.getElementById('modal-tag').className = 'modal-tag';
+    document.getElementById('modal-level').textContent = '';
+    document.getElementById('modal-clue').innerHTML = html;
+    document.getElementById('modal-dist').textContent = '';
+    document.getElementById('modal-bonus').style.display = 'none';
+    
+    document.querySelector('.modal-actions').style.display = 'none';
+    document.querySelector('.btn-danger').style.display = 'none';
+    
+    modal.classList.add('show');
+    
+    // 🔥 AGGIUNGI QUESTO: chiudi cliccando fuori
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeClue();
         }
-
+    });
+} else {
+    showToast('🏅 Badge caricati');
+}
     } catch (error) {
         console.error('❌ Errore badge:', error);
         showToast('❌ Errore nel caricamento dei badge');
