@@ -33,6 +33,8 @@ let selectedHideAddress = '📍 Piazza Ottinetti, Ivrea';
 
 // Variabili per la classifica
 let currentLeaderboardFilter = 'all';
+let hidePhotoFile = null;
+let hidePhotoDataUrl = null;
 
 // ============================================================
 // 1. REGISTRAZIONE
@@ -1619,164 +1621,8 @@ async function updateUnreadCount() {
 }
 
 // ============================================================
-// 27. CLASSIFICA
+// 27. CARICAMENTO FOTO - VERSIONE COMPLETA
 // ============================================================
-
-async function loadLeaderboard(filter = 'all') {
-    currentLeaderboardFilter = filter;
-    
-    document.querySelectorAll('.btn-filter').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    const activeBtn = filter === 'all' 
-        ? document.querySelector('.btn-filter:first-child')
-        : document.querySelector('.btn-filter:last-child');
-    
-    if (activeBtn) {
-        activeBtn.classList.add('active');
-    }
-
-    const list = document.getElementById('leaderboard-list');
-    if (!list) return;
-    
-    list.innerHTML = '<div style="text-align:center; color:var(--text-secondary); padding:40px 0;">⏳ Caricamento...</div>';
-
-    try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        const city = filter === 'city' && user ? user.city : null;
-        
-        const data = await getLeaderboard(50, city);
-        
-        if (!data || data.length === 0) {
-            list.innerHTML = `
-                <div style="text-align:center; color:var(--text-secondary); padding:40px 0;">
-                    🏆 Nessun cacciatore trovato
-                    ${filter === 'city' ? ' nella tua città' : ''}
-                </div>
-            `;
-            return;
-        }
-
-        const medals = ['🥇', '🥈', '🥉'];
-        
-        list.innerHTML = data.map((user, index) => {
-            const medal = index < 3 ? medals[index] : `#${index + 1}`;
-            const levelLabel = user.trust_level === 'legend' ? '👑 Leggenda' :
-                               user.trust_level === 'master' ? '⭐ Maestro' :
-                               user.trust_level === 'hunter' ? '🔶 Cacciatore' : '🟢 Esploratore';
-            
-            return `
-                <div class="leaderboard-item ${index < 3 ? 'top' : ''}">
-                    <div class="leaderboard-rank">${medal}</div>
-                    <div class="leaderboard-info">
-                        <div class="leaderboard-name">${user.name || 'Anonimo'}</div>
-                        <div class="leaderboard-level">${levelLabel}</div>
-                    </div>
-                    <div class="leaderboard-karma">
-                        <div class="value">${user.karma}</div>
-                        <div class="label">Karma</div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        
-    } catch (error) {
-        console.error('Errore classifica:', error);
-        list.innerHTML = '<div style="text-align:center; color:var(--neon-red); padding:40px 0;">❌ Errore nel caricamento della classifica</div>';
-    }
-}
-
-// ============================================================
-// 28. ESPORTA FUNZIONI (per uso globale)
-// ============================================================
-window.registerUser = registerUser;
-window.loginUser = loginUser;
-window.getUserProfile = getUserProfile;
-window.getNearbyTreasures = getNearbyTreasures;
-window.createTreasure = createTreasure;
-window.findTreasure = findTreasure;
-window.reportTreasure = reportTreasure;
-window.getLeaderboard = getLeaderboard;
-window.getKarmaHistory = getKarmaHistory;
-window.logout = logout;
-window.showToast = showToast;
-
-// Auth UI
-window.handleLogin = handleLogin;
-window.handleRegister = handleRegister;
-window.handleLogout = handleLogout;
-window.updateUIForLoggedInUser = updateUIForLoggedInUser;
-window.showAuthMessage = showAuthMessage;
-window.updateProfileUI = updateProfileUI;
-
-// Notifiche
-window.getNotifications = getNotifications;
-window.markNotificationRead = markNotificationRead;
-window.markAllNotificationsRead = markAllNotificationsRead;
-window.getUnreadCount = getUnreadCount;
-window.loadNotifications = loadNotifications;
-window.handleNotificationClick = handleNotificationClick;
-window.updateUnreadCount = updateUnreadCount;
-window.toggleNotifications = toggleNotifications;
-
-// Audio
-window.AudioSystem = AudioSystem;
-window.toggleAudio = () => AudioSystem.toggleMute();
-
-// App - TESORI STARTER
-window.startApp = startApp;
-window.loadRealTreasures = loadRealTreasures;
-window.generateStartersForUser = generateStartersForUser;
-window.clearTreasureMarkers = clearTreasureMarkers;
-window.addRealTreasureMarker = addRealTreasureMarker;
-
-// Mappa
-window.initMap = initMap;
-window.centerOnUser = centerOnUser;
-
-// Navigazione e UI
-window.goTo = goTo;
-window.goToStep = goToStep;
-window.openClue = openClue;
-window.closeClue = closeClue;
-window.toggleTheme = toggleTheme;
-window.applyTheme = applyTheme;
-window.initTheme = initTheme;
-window.closeRadar = closeRadar;
-
-// Nascondi tesoro
-window.initHideMap = initHideMap;
-window.getCurrentLocationForHide = getCurrentLocationForHide;
-window.centerHideMapOnIvrea = centerHideMapOnIvrea;
-window.updateHideLocationDisplay = updateHideLocationDisplay;
-window.saveHideLocationAndGoToStep3 = saveHideLocationAndGoToStep3;
-window.saveTreasureDataAndGoToStep4 = saveTreasureDataAndGoToStep4;
-window.updateStep4Preview = updateStep4Preview;
-window.createTreasureFromForm = createTreasureFromForm;
-
-// Profilo - Pulsanti
-window.openTreasureHistory = openTreasureHistory;
-window.openBadges = openBadges;
-window.openIdentityVerification = openIdentityVerification;
-window.openSecurityCenter = openSecurityCenter;
-window.openPrivacySettings = openPrivacySettings;
-window.openCityLeaderboard = openCityLeaderboard;
-
-// Caricamento foto
-window.initHidePhoto = initHidePhoto;
-window.handleFileSelect = handleFileSelect;
-window.triggerFileInput = triggerFileInput;
-window.clearHidePhoto = clearHidePhoto;
-window.saveHidePhotoAndGoToStep2 = saveHidePhotoAndGoToStep2;
-
-// ============================================================
-// 29. CARICAMENTO FOTO - VERSIONE COMPLETA
-// ============================================================
-
-// Variabili globali per la foto
-let hidePhotoFile = null;
-let hidePhotoDataUrl = null;
 
 // Inizializza il listener per il cambio file
 function initHidePhoto() {
@@ -1925,6 +1771,158 @@ async function saveHidePhotoAndGoToStep2() {
     goToStep(2);
 }
 
+// ============================================================
+// 28. CLASSIFICA
+// ============================================================
+
+async function loadLeaderboard(filter = 'all') {
+    currentLeaderboardFilter = filter;
+    
+    document.querySelectorAll('.btn-filter').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const activeBtn = filter === 'all' 
+        ? document.querySelector('.btn-filter:first-child')
+        : document.querySelector('.btn-filter:last-child');
+    
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+
+    const list = document.getElementById('leaderboard-list');
+    if (!list) return;
+    
+    list.innerHTML = '<div style="text-align:center; color:var(--text-secondary); padding:40px 0;">⏳ Caricamento...</div>';
+
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        const city = filter === 'city' && user ? user.city : null;
+        
+        const data = await getLeaderboard(50, city);
+        
+        if (!data || data.length === 0) {
+            list.innerHTML = `
+                <div style="text-align:center; color:var(--text-secondary); padding:40px 0;">
+                    🏆 Nessun cacciatore trovato
+                    ${filter === 'city' ? ' nella tua città' : ''}
+                </div>
+            `;
+            return;
+        }
+
+        const medals = ['🥇', '🥈', '🥉'];
+        
+        list.innerHTML = data.map((user, index) => {
+            const medal = index < 3 ? medals[index] : `#${index + 1}`;
+            const levelLabel = user.trust_level === 'legend' ? '👑 Leggenda' :
+                               user.trust_level === 'master' ? '⭐ Maestro' :
+                               user.trust_level === 'hunter' ? '🔶 Cacciatore' : '🟢 Esploratore';
+            
+            return `
+                <div class="leaderboard-item ${index < 3 ? 'top' : ''}">
+                    <div class="leaderboard-rank">${medal}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">${user.name || 'Anonimo'}</div>
+                        <div class="leaderboard-level">${levelLabel}</div>
+                    </div>
+                    <div class="leaderboard-karma">
+                        <div class="value">${user.karma}</div>
+                        <div class="label">Karma</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Errore classifica:', error);
+        list.innerHTML = '<div style="text-align:center; color:var(--neon-red); padding:40px 0;">❌ Errore nel caricamento della classifica</div>';
+    }
+}
+
+// ============================================================
+// 29. ESPORTA FUNZIONI (per uso globale)
+// ============================================================
+window.registerUser = registerUser;
+window.loginUser = loginUser;
+window.getUserProfile = getUserProfile;
+window.getNearbyTreasures = getNearbyTreasures;
+window.createTreasure = createTreasure;
+window.findTreasure = findTreasure;
+window.reportTreasure = reportTreasure;
+window.getLeaderboard = getLeaderboard;
+window.getKarmaHistory = getKarmaHistory;
+window.logout = logout;
+window.showToast = showToast;
+
+// Auth UI
+window.handleLogin = handleLogin;
+window.handleRegister = handleRegister;
+window.handleLogout = handleLogout;
+window.updateUIForLoggedInUser = updateUIForLoggedInUser;
+window.showAuthMessage = showAuthMessage;
+window.updateProfileUI = updateProfileUI;
+
+// Notifiche
+window.getNotifications = getNotifications;
+window.markNotificationRead = markNotificationRead;
+window.markAllNotificationsRead = markAllNotificationsRead;
+window.getUnreadCount = getUnreadCount;
+window.loadNotifications = loadNotifications;
+window.handleNotificationClick = handleNotificationClick;
+window.updateUnreadCount = updateUnreadCount;
+window.toggleNotifications = toggleNotifications;
+
+// Audio
+window.AudioSystem = AudioSystem;
+window.toggleAudio = () => AudioSystem.toggleMute();
+
+// App - TESORI STARTER
+window.startApp = startApp;
+window.loadRealTreasures = loadRealTreasures;
+window.generateStartersForUser = generateStartersForUser;
+window.clearTreasureMarkers = clearTreasureMarkers;
+window.addRealTreasureMarker = addRealTreasureMarker;
+
+// Mappa
+window.initMap = initMap;
+window.centerOnUser = centerOnUser;
+
+// Navigazione e UI
+window.goTo = goTo;
+window.goToStep = goToStep;
+window.openClue = openClue;
+window.closeClue = closeClue;
+window.toggleTheme = toggleTheme;
+window.applyTheme = applyTheme;
+window.initTheme = initTheme;
+window.closeRadar = closeRadar;
+
+// Nascondi tesoro
+window.initHideMap = initHideMap;
+window.getCurrentLocationForHide = getCurrentLocationForHide;
+window.centerHideMapOnIvrea = centerHideMapOnIvrea;
+window.updateHideLocationDisplay = updateHideLocationDisplay;
+window.saveHideLocationAndGoToStep3 = saveHideLocationAndGoToStep3;
+window.saveTreasureDataAndGoToStep4 = saveTreasureDataAndGoToStep4;
+window.updateStep4Preview = updateStep4Preview;
+window.createTreasureFromForm = createTreasureFromForm;
+
+// Caricamento foto
+window.initHidePhoto = initHidePhoto;
+window.handleFileSelect = handleFileSelect;
+window.triggerFileInput = triggerFileInput;
+window.clearHidePhoto = clearHidePhoto;
+window.saveHidePhotoAndGoToStep2 = saveHidePhotoAndGoToStep2;
+
+// Profilo - Pulsanti
+window.openTreasureHistory = openTreasureHistory;
+window.openBadges = openBadges;
+window.openIdentityVerification = openIdentityVerification;
+window.openSecurityCenter = openSecurityCenter;
+window.openPrivacySettings = openPrivacySettings;
+window.openCityLeaderboard = openCityLeaderboard;
+
 console.log('✅ frontend.js caricato correttamente!');
 console.log('🔧 Funzioni disponibili:');
 console.log('  - registerUser(), loginUser()');
@@ -1937,6 +1935,7 @@ console.log('  - generateStartersForUser() - Genera tesori starter');
 console.log('  - initMap() - Inizializza la mappa');
 console.log('  - goTo() - Navigazione tra schermate');
 console.log('  - openClue() - Apre l\'indizio del tesoro');
+console.log('  - triggerFileInput() - Carica foto');
 console.log('  - openTreasureHistory() - Cronologia tesori');
 console.log('  - openBadges() - Badge e ricompense');
 console.log('  - openSecurityCenter() - Centro sicurezza');
