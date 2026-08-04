@@ -908,7 +908,7 @@ function addRealTreasureMarker(treasure) {
 
 async function openTreasureHistory() {
     console.log('📜 Apertura cronologia tesori...');
-    
+   
     const token = localStorage.getItem('token');
     if (!token) {
         showToast('⚠️ Devi essere loggato');
@@ -939,7 +939,7 @@ async function openTreasureHistory() {
             const statusIcon = t.status === 'found' ? '✅' : '📦';
             const statusText = t.status === 'found' ? 'Trovato' : 'Nascosto';
             const date = new Date(t.created_at).toLocaleDateString('it-IT');
-            
+           
             html += `
                 <div style="padding:12px 0; border-bottom:1px solid var(--border-color);">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -972,10 +972,10 @@ async function openTreasureHistory() {
             document.getElementById('modal-clue').innerHTML = html;
             document.getElementById('modal-dist').textContent = '';
             document.getElementById('modal-bonus').style.display = 'none';
-            
+           
             document.querySelector('.modal-actions').style.display = 'none';
             document.querySelector('.btn-danger').style.display = 'none';
-            
+           
             modal.classList.add('show');
         } else {
             showToast('📜 Cronologia tesori caricata');
@@ -987,143 +987,6 @@ async function openTreasureHistory() {
     }
 }
 
-// ============================================================
-// APRE IL MODALE CON L'INDIZIO DEL TESORO
-// ============================================================
-
-function openClue(id) {
-    console.log('📜 Apertura indizio per tesoro:', id);
-    
-    // 🔥 RIPRISTINA I PULSANTI PRIMA DI MOSTRARE IL TESORO
-    const actions = document.querySelector('.modal-actions');
-    const dangerBtn = document.querySelector('.btn-danger');
-    if (actions) actions.style.display = 'flex';
-    if (dangerBtn) dangerBtn.style.display = 'block';
-    
-    window.currentTreasureId = id;
-    
-    let t = null;
-    if (window.realTreasures) {
-        t = window.realTreasures.find(t => t.id === id);
-    }
-
-    if (!t) {
-        showToast('⚠️ Tesoro non trovato');
-        return;
-    }
-
-    if (AudioSystem) AudioSystem.play('clueOpen');
-
-    const modal = document.getElementById('clue-modal');
-    const tag = document.getElementById('modal-tag');
-    const clueBox = document.getElementById('modal-clue');
-    const bonus = document.getElementById('modal-bonus');
-    const levelEl = document.getElementById('modal-level');
-    const titleEl = document.getElementById('modal-title');
-    const clueEl = document.getElementById('modal-clue');
-    const distEl = document.getElementById('modal-dist');
-
-    if (!modal) {
-        console.error('❌ Modale clue non trovato');
-        return;
-    }
-
-    if (tag) tag.className = 'modal-tag';
-    if (clueBox) clueBox.className = 'clue-box';
-    if (bonus) bonus.style.display = 'none';
-
-    let levelText = '';
-    let karmaText = '';
-
-    if (t.level === 'relic') {
-        if (tag) {
-            tag.textContent = '⚡ RELIQUIA DIMENTICATA';
-            tag.classList.add('relic');
-        }
-        if (clueBox) clueBox.classList.add('relic');
-        if (bonus) {
-            bonus.style.display = 'inline';
-            bonus.textContent = '🔥 Karma x3 (+30)';
-        }
-        levelText = '⚡ Reliquia Leggendaria';
-        karmaText = 'Karma: 30';
-        if (AudioSystem) AudioSystem.play('relicAlert');
-    } else if (t.level === 'warm') {
-        if (tag) {
-            tag.textContent = '🔥 Tesoro "Caldo"';
-            tag.classList.add('warm');
-        }
-        if (clueBox) clueBox.classList.add('warm');
-        if (bonus) {
-            bonus.style.display = 'inline';
-            bonus.textContent = '🔥 Karma x2 (+20)';
-        }
-        levelText = '🔥 Tesoro Caldo';
-        karmaText = 'Karma: 20';
-    } else {
-        if (tag) tag.textContent = '🏴‍☠️ Tesoro Rilevato';
-        levelText = '📦 Tesoro Normale';
-        karmaText = 'Karma: 10';
-    }
-
-    if (levelEl) levelEl.textContent = `${levelText} · ${karmaText}`;
-    if (titleEl) titleEl.textContent = t.title;
-    if (clueEl) clueEl.textContent = `"${t.clue}"`;
-    if (distEl) distEl.textContent = `${t.distance || 0} m`;
-
-    modal.classList.add('show');
-    console.log('✅ Modale aperto per:', t.title);
-}
-
-// 🔥 ESPORTA SUBITO LA FUNZIONE
-window.openClue = openClue;
-
-
-// ============================================================
-// CHIUDI MODALE (con ripristino)
-// ============================================================
-
-function closeClue() {
-    console.log('🔒 Chiusura modale e ripristino pulsanti');
-    
-    const modal = document.getElementById('clue-modal');
-    if (modal) {
-        modal.classList.remove('show');
-    }
-    
-    // 🔥 FORZA IL RIPRISTINO DEI PULSANTI (anche se non esistono)
-    const actions = document.querySelector('.modal-actions');
-    const dangerBtn = document.querySelector('.btn-danger');
-    if (actions) {
-        actions.style.display = 'flex';
-        actions.style.visibility = 'visible';
-    }
-    if (dangerBtn) {
-        dangerBtn.style.display = 'block';
-        dangerBtn.style.visibility = 'visible';
-    }
-    
-    // Ripristina il contenuto del modale
-    const titleEl = document.getElementById('modal-title');
-    const tagEl = document.getElementById('modal-tag');
-    const levelEl = document.getElementById('modal-level');
-    const clueEl = document.getElementById('modal-clue');
-    const distEl = document.getElementById('modal-dist');
-    const bonusEl = document.getElementById('modal-bonus');
-    
-    if (titleEl) titleEl.textContent = 'Il Quaderno Perduto';
-    if (tagEl) {
-        tagEl.textContent = '🏴‍☠️ Tesoro Rilevato';
-        tagEl.className = 'modal-tag';
-    }
-    if (levelEl) levelEl.textContent = '📦 Tesoro Normale · Karma: 10';
-    if (clueEl) clueEl.textContent = '"Dove l\'acqua cantava e ora la pietra tace..."';
-    if (distEl) distEl.textContent = '150 m';
-    if (bonusEl) bonusEl.style.display = 'none';
-}
-
-// 🔥 ESPORTA ANCHE QUESTA
-window.closeClue = closeClue;
 
 // ============================================================
 // PROFILO - BADGE E RICOMPENSE (REALE)
@@ -1131,7 +994,7 @@ window.closeClue = closeClue;
 
 async function openBadges() {
     console.log('🏅 Apertura badge e ricompense...');
-    
+   
     const token = localStorage.getItem('token');
     if (!token) {
         showToast('⚠️ Devi essere loggato');
@@ -1166,7 +1029,7 @@ async function openBadges() {
                     <div style="width:${parseInt(badge.progress.split('/')[0]) / parseInt(badge.progress.split('/')[1]) * 100}%; height:100%; background:var(--neon-green); border-radius:2px;"></div>
                 </div>
             ` : '';
-            
+           
             html += `
                 <div style="padding:12px 0; border-bottom:1px solid var(--border-color);">
                     <div style="display:flex; align-items:center; gap:12px;">
@@ -1198,30 +1061,24 @@ async function openBadges() {
         `;
 
         // Mostra il modale
-const modal = document.getElementById('clue-modal');
-if (modal) {
-    document.getElementById('modal-title').textContent = '🏅 Badge e Ricompense';
-    document.getElementById('modal-tag').textContent = 'Badge';
-    document.getElementById('modal-tag').className = 'modal-tag';
-    document.getElementById('modal-level').textContent = '';
-    document.getElementById('modal-clue').innerHTML = html;
-    document.getElementById('modal-dist').textContent = '';
-    document.getElementById('modal-bonus').style.display = 'none';
-    
-    document.querySelector('.modal-actions').style.display = 'none';
-    document.querySelector('.btn-danger').style.display = 'none';
-    
-    modal.classList.add('show');
-    
-    // 🔥 AGGIUNGI QUESTO: chiudi cliccando fuori
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            closeClue();
+        const modal = document.getElementById('clue-modal');
+        if (modal) {
+            document.getElementById('modal-title').textContent = '🏅 Badge e Ricompense';
+            document.getElementById('modal-tag').textContent = 'Badge';
+            document.getElementById('modal-tag').className = 'modal-tag';
+            document.getElementById('modal-level').textContent = '';
+            document.getElementById('modal-clue').innerHTML = html;
+            document.getElementById('modal-dist').textContent = '';
+            document.getElementById('modal-bonus').style.display = 'none';
+           
+            document.querySelector('.modal-actions').style.display = 'none';
+            document.querySelector('.btn-danger').style.display = 'none';
+           
+            modal.classList.add('show');
+        } else {
+            showToast('🏅 Badge caricati');
         }
-    });
-} else {
-    showToast('🏅 Badge caricati');
-}
+
     } catch (error) {
         console.error('❌ Errore badge:', error);
         showToast('❌ Errore nel caricamento dei badge');
@@ -1249,7 +1106,6 @@ function openCityLeaderboard() {
     goTo('leaderboard');
 }
 
-
 // ============================================================
 // ESPORTA FUNZIONI (per uso globale)
 // ============================================================
@@ -1266,10 +1122,6 @@ window.getLeaderboard = getLeaderboard;
 window.getKarmaHistory = getKarmaHistory;
 window.logout = logout;
 window.showToast = showToast;
-
-// ---------- MODALE TESORI ----------
-window.openClue = openClue;
-window.closeClue = closeClue;
 
 // ---------- AUTH UI ----------
 window.handleLogin = handleLogin;
