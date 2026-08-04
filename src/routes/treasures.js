@@ -62,6 +62,33 @@ router.get('/nearby', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
+// LISTA TESORI SEGNALATI (per moderazione)
+// ============================================================
+router.get('/reported/list', authMiddleware, async (req, res) => {
+    try {
+        const reportedTreasures = await Treasure.findAll({
+            where: {
+                status: 'reported'
+            },
+            order: [['updated_at', 'DESC']]
+        });
+
+        res.json({
+            success: true,
+            count: reportedTreasures.length,
+            data: reportedTreasures
+        });
+
+    } catch (error) {
+        console.error('❌ Errore lista segnalati:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Errore nel recupero dei tesori segnalati'
+        });
+    }
+});
+
+// ============================================================
 // DETTAGLIO TESORO
 // ============================================================
 router.get('/:id', authMiddleware, async (req, res) => {
