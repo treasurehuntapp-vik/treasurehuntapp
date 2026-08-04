@@ -1075,6 +1075,9 @@ function openClue(id) {
     console.log('✅ Modale aperto per:', t.title);
 }
 
+// 🔥 ESPORTA SUBITO LA FUNZIONE
+window.openClue = openClue;
+
 
 // ============================================================
 // CHIUDI MODALE (con ripristino)
@@ -1118,6 +1121,9 @@ function closeClue() {
     if (distEl) distEl.textContent = '150 m';
     if (bonusEl) bonusEl.style.display = 'none';
 }
+
+// 🔥 ESPORTA ANCHE QUESTA
+window.closeClue = closeClue;
 
 // ============================================================
 // PROFILO - BADGE E RICOMPENSE (REALE)
