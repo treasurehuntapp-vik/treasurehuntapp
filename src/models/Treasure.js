@@ -52,6 +52,14 @@ const Treasure = sequelize.define('Treasure', {
         type: DataTypes.DATE,
         allowNull: true
     },
+    found_by: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id'
+        }
+    },
     becomes_relic_at: {
         type: DataTypes.DATE,
         allowNull: true

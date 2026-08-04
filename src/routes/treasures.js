@@ -219,9 +219,10 @@ router.post('/:id/find', authMiddleware, async (req, res) => {
             }
         }
 
-        treasure.status = 'found';
+  treasure.status = 'found';
         treasure.found_at = new Date();
-        treasure.find_count = treasure.find_count + 1;
+        treasure.found_by = req.user.id;
+        treasure.find_count = treasure.find_count + 1; 
 
         const karmaEarned = treasure.karma_value || 10;
         await treasure.save();

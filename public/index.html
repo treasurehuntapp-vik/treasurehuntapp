@@ -485,11 +485,11 @@
                 <span>Distanza: <span class="distance" id="modal-dist">150 m</span></span>
                 <span class="bonus" id="modal-bonus" style="display:none;">🔥 Karma x3</span>
             </div>
-     <div class="modal-actions" style="display:flex !important;">
-    <button class="btn-primary" onclick="findTreasure()">✅ Ho Trovato!</button>
-    <button class="btn-secondary" onclick="closeClue()">Chiudi</button>
-</div>
-<button class="btn-danger" onclick="reportTreasure()" style="display:block !important;">🚨 Segnala Pericolo</button>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="findTreasure()">✅ Ho Trovato!</button>
+                <button class="btn-secondary" onclick="closeClue()">Chiudi</button>
+            </div>
+            <button class="btn-danger" onclick="reportTreasure()">🚨 Segnala Pericolo</button>
         </div>
 
     </div>
@@ -509,64 +509,64 @@
         document.addEventListener('DOMContentLoaded', function() {
             const input = document.getElementById('hide-photo-input');
             const btn = document.getElementById('hide-photo-btn');
-            
+           
             if (!input || !btn) {
                 console.warn('⚠️ Elementi per il caricamento foto non trovati');
                 return;
             }
-            
+           
             // Usa un event listener invece di onclick
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 console.log('📸 Pulsante cliccato');
-                
+               
                 // Reset del valore
                 input.value = '';
                 // Apri la galleria
                 input.click();
                 console.log('📸 Galleria aperta');
             });
-            
+           
             // Gestisce la selezione del file
             input.addEventListener('change', function(e) {
                 console.log('📸 Evento change catturato!');
-                
+               
                 const file = e.target.files[0];
                 if (!file) {
                     console.log('⚠️ Nessun file selezionato');
                     return;
                 }
-                
+               
                 console.log('📸 File selezionato:', file.name, file.size, file.type);
-                
+               
                 // Validazioni
                 if (file.size > 5 * 1024 * 1024) {
                     showToast('❌ La foto è troppo grande (max 5MB)');
                     input.value = '';
                     return;
                 }
-                
+               
                 if (!file.type.startsWith('image/')) {
                     showToast('❌ Il file deve essere un\'immagine');
                     input.value = '';
                     return;
                 }
-                
+               
                 // Salva il file
                 hidePhotoFile = file;
                 console.log('📸 File salvato in hidePhotoFile');
-                
+               
                 // Leggi il file per l'anteprima
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     console.log('📸 FileReader completato');
                     hidePhotoDataUrl = event.target.result;
-                    
+                   
                     const img = document.getElementById('hide-photo-image');
                     const placeholder = document.getElementById('hide-photo-placeholder');
                     const preview = document.getElementById('hide-photo-preview');
                     const removeBtn = document.getElementById('hide-photo-remove');
-                    
+                   
                     if (img) {
                         img.src = event.target.result;
                         img.style.display = 'block';
@@ -580,18 +580,18 @@
                     if (removeBtn) {
                         removeBtn.style.display = 'block';
                     }
-                    
+                   
                     showToast('✅ Foto caricata!');
                     console.log('📸 Anteprima visualizzata');
                 };
-                
+               
                 reader.onerror = function() {
                     console.error('❌ Errore FileReader');
                     showToast('❌ Errore nella lettura del file');
                 };
-                
+               
                 reader.readAsDataURL(file);
-                
+               
                 // Reset dell'input DOPO aver letto il file
                 input.value = '';
             });
@@ -600,16 +600,16 @@
         // Rimuove la foto selezionata
         function clearHidePhoto() {
             console.log('🗑️ Rimozione foto');
-            
+           
             hidePhotoFile = null;
             hidePhotoDataUrl = null;
-            
+           
             const img = document.getElementById('hide-photo-image');
             const placeholder = document.getElementById('hide-photo-placeholder');
             const preview = document.getElementById('hide-photo-preview');
             const removeBtn = document.getElementById('hide-photo-remove');
             const input = document.getElementById('hide-photo-input');
-            
+           
             if (img) {
                 img.src = '';
                 img.style.display = 'none';
@@ -626,25 +626,25 @@
             if (input) {
                 input.value = '';
             }
-            
+           
             showToast('🗑️ Foto rimossa');
         }
 
         // Salva la foto e passa allo step 2
         function saveHidePhotoAndGoToStep2() {
             console.log('📸 Verifica foto:', hidePhotoFile ? '✅ File presente' : '❌ NESSUN FILE');
-            
+           
             if (!hidePhotoFile) {
                 showToast('⚠️ Carica una foto dell\'oggetto');
                 return;
             }
-            
+           
             if (!window.tempTreasureData) {
                 window.tempTreasureData = {};
             }
             window.tempTreasureData.photoFile = hidePhotoFile;
             window.tempTreasureData.photoDataUrl = hidePhotoDataUrl;
-            
+           
             console.log('📸 Dati foto salvati in tempTreasureData');
             goToStep(2);
         }
@@ -676,10 +676,10 @@
 
         function initHideMap() {
             if (hideMap) return;
-            
+           
             const container = document.getElementById('hide-map-container');
             if (!container) return;
-            
+           
             hideMap = L.map('hide-map-container', {
                 zoomControl: true,
                 attributionControl: false
@@ -762,13 +762,13 @@
                 input.value = `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
                 selectedHideAddress = input.value;
             }
-            
+           
             if (window.tempTreasureData) {
                 window.tempTreasureData.latitude = lat;
                 window.tempTreasureData.longitude = lng;
                 window.tempTreasureData.address = selectedHideAddress;
             }
-            
+           
             updateStep4Preview();
         }
 
@@ -779,7 +779,7 @@
             window.tempTreasureData.latitude = selectedHideLocation.lat;
             window.tempTreasureData.longitude = selectedHideLocation.lng;
             window.tempTreasureData.address = selectedHideAddress;
-            
+           
             updateStep4Preview();
             goToStep(3);
         }
@@ -844,35 +844,53 @@
                 overlay.classList.add('active');
             }
         }
-
-// PROFILO - PULSANTI (definiti in frontend.js)
 // ============================================================
+        // PROFILO - PULSANTI
+        // ============================================================
+        function openTreasureHistory() {
+            showToast('📜 Cronologia tesori - In sviluppo');
+        }
+        function openBadges() {
+            showToast('🏅 Badge e Ricompense - In sviluppo');
+        }
+        function openIdentityVerification() {
+            showToast('🔐 Verifica Identità - In sviluppo');
+        }
+        function openSecurityCenter() {
+            showToast('🛡️ Centro Sicurezza - In sviluppo');
+        }
+        function openPrivacySettings() {
+            showToast('⚙️ Impostazioni Privacy - In sviluppo');
+        }
+        function openCityLeaderboard() {
+            goTo('leaderboard');
+        }
+        function goToStep(step) {
+            if (step < 1 || step > 4) return;
 
-function goToStep(step) {
-    if (step < 1 || step > 4) return;
+            document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
 
-    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('step' + step).classList.add('active');
+            document.querySelectorAll('.step-indicator .step').forEach(el => {
+                const s = parseInt(el.dataset.step);
+                el.classList.remove('active', 'done');
+                if (s === step) el.classList.add('active');
+                else if (s < step) el.classList.add('done');
+            });
 
-    document.querySelectorAll('.step-indicator .step').forEach(el => {
-        const s = parseInt(el.dataset.step);
-        el.classList.remove('active', 'done');
-        if (s === step) el.classList.add('active');
-        else if (s < step) el.classList.add('done');
-    });
+            if (step === 2) {
+                setTimeout(() => initHideMap(), 300);
+            }
+        }
 
-    if (step === 2) {
-        setTimeout(() => initHideMap(), 300);
-    }
-}
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
 
-function showToast(msg) {
-    const toast = document.getElementById('toast');
-    document.getElementById('toast-msg').textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(toast._timeout);
-    toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
-}
         // ============================================================
         // GENERA TESORI STARTER
         // ============================================================
@@ -1233,73 +1251,7 @@ function showToast(msg) {
             return Math.round(R * c);
         }
 
-        // ============================================================
-        // CLUE MODAL
-        // ============================================================
 
-        function openClue(id) {
-            window.currentTreasureId = id;
-
-            let t = null;
-
-            if (window.realTreasures) {
-                t = window.realTreasures.find(t => t.id === id);
-            }
-
-            if (!t) {
-                showToast('⚠️ Tesoro non trovato');
-                return;
-            }
-
-            AudioSystem.play('clueOpen');
-
-            const tag = document.getElementById('modal-tag');
-            const clueBox = document.getElementById('modal-clue');
-            const bonus = document.getElementById('modal-bonus');
-            const levelEl = document.getElementById('modal-level');
-
-            tag.className = 'modal-tag';
-            clueBox.className = 'clue-box';
-            bonus.style.display = 'none';
-
-            let levelText = '';
-            let karmaText = '';
-
-            if (t.level === 'relic') {
-                tag.textContent = '⚡ RELIQUIA DIMENTICATA';
-                tag.classList.add('relic');
-                clueBox.classList.add('relic');
-                bonus.style.display = 'inline';
-                bonus.textContent = '🔥 Karma x3 (+30)';
-                levelText = '⚡ Reliquia Leggendaria';
-                karmaText = 'Karma: 30';
-                AudioSystem.play('relicAlert');
-            } else if (t.level === 'warm') {
-                tag.textContent = '🔥 Tesoro "Caldo"';
-                tag.classList.add('warm');
-                clueBox.classList.add('warm');
-                bonus.style.display = 'inline';
-                bonus.textContent = '🔥 Karma x2 (+20)';
-                levelText = '🔥 Tesoro Caldo';
-                karmaText = 'Karma: 20';
-            } else {
-                tag.textContent = '🏴‍☠️ Tesoro Rilevato';
-                levelText = '📦 Tesoro Normale';
-                karmaText = 'Karma: 10';
-            }
-
-            levelEl.textContent = `${levelText} · ${karmaText}`;
-
-            document.getElementById('modal-title').textContent = t.title;
-            document.getElementById('modal-clue').textContent = `"${t.clue}"`;
-            document.getElementById('modal-dist').textContent = `${t.distance || 0} m`;
-
-            document.getElementById('clue-modal').classList.add('show');
-        }
-
-        function closeClue() {
-            document.getElementById('clue-modal').classList.remove('show');
-        }
 
         async function findTreasure() {
             const token = localStorage.getItem('token');
@@ -1378,16 +1330,16 @@ function showToast(msg) {
                 input.type = 'file';
                 input.accept = 'image/*';
                 input.capture = 'environment';
-                
+               
                 input.onchange = (e) => {
                     const file = e.target.files[0];
                     resolve(file);
                 };
-                
+               
                 input.oncancel = () => {
                     resolve(null);
                 };
-                
+               
                 input.click();
             });
         }
@@ -1527,15 +1479,15 @@ function showToast(msg) {
 
         async function loadLeaderboard(filter = 'all') {
             currentLeaderboardFilter = filter;
-            
+           
             document.querySelectorAll('.btn-filter').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
-            const activeBtn = filter === 'all' 
+           
+            const activeBtn = filter === 'all'
                 ? document.querySelector('.btn-filter:first-child')
                 : document.querySelector('.btn-filter:last-child');
-            
+           
             if (activeBtn) {
                 activeBtn.classList.add('active');
             }
@@ -1546,9 +1498,9 @@ function showToast(msg) {
             try {
                 const user = JSON.parse(localStorage.getItem('user'));
                 const city = filter === 'city' && user ? user.city : null;
-                
+               
                 const data = await getLeaderboard(50, city);
-                
+               
                 if (!data || data.length === 0) {
                     list.innerHTML = `
                         <div style="text-align:center; color:var(--text-secondary); padding:40px 0;">
@@ -1560,13 +1512,13 @@ function showToast(msg) {
                 }
 
                 const medals = ['🥇', '🥈', '🥉'];
-                
+               
                 list.innerHTML = data.map((user, index) => {
                     const medal = index < 3 ? medals[index] : `#${index + 1}`;
                     const levelLabel = user.trust_level === 'legend' ? '👑 Leggenda' :
                                        user.trust_level === 'master' ? '⭐ Maestro' :
                                        user.trust_level === 'hunter' ? '🔶 Cacciatore' : '🟢 Esploratore';
-                    
+                   
                     return `
                         <div class="leaderboard-item ${index < 3 ? 'top' : ''}">
                             <div class="leaderboard-rank">${medal}</div>
@@ -1581,7 +1533,7 @@ function showToast(msg) {
                         </div>
                     `;
                 }).join('');
-                
+               
             } catch (error) {
                 console.error('Errore classifica:', error);
                 list.innerHTML = '<div style="text-align:center; color:var(--neon-red); padding:40px 0;">❌ Errore nel caricamento della classifica</div>';
@@ -1609,7 +1561,7 @@ function showToast(msg) {
         async function loadNotifications() {
             const list = document.getElementById('notifications-list');
             const result = await getNotifications(50, 0, false);
-            
+           
             if (!result || result.notifications.length === 0) {
                 list.innerHTML = `<div class="notif-empty">📭 Nessuna notifica</div>`;
                 return;
@@ -1890,7 +1842,7 @@ function showToast(msg) {
             }
             initTheme();
             updateUnreadCount();
-            
+           
             AudioSystem.init();
 
             document.addEventListener('click', function startAudio() {
