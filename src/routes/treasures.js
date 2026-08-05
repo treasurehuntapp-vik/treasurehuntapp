@@ -346,28 +346,32 @@ router.get('/starter/generate', authMiddleware, async (req, res) => {
         const city = await getCityFromCoordinates(latNum, lngNum);
         console.log(`📍 Generazione tesori starter per: ${city}`);
 
-        // 2. Controlla se esistono già tesori starter per questa città
-        const existingStarters = await Treasure.count({
-            where: {
-                is_starter: true,
-                address: city
-            }
-        });
+    // 2. Controlla se esistono già tesori starter per questa città
+const existingStarters = await Treasure.count({
+    where: {
+        is_starter: true,
+        address: city
+    }
+});
 
-        if (existingStarters > 0) {
-            console.log(`ℹ️  Già presenti ${existingStarters} tesori starter per ${city}`);
-            const starters = await Treasure.findAll({
-                where: {
-                    is_starter: true,
-                    address: city
-                }
-            });
-            return res.json({
-                success: true,
-                message: `Tesori starter già presenti (${existingStarters})`,
-                data: starters
-            });
+// 🔥 FORZA LA GENERAZIONE SE non ci sono starter
+if (existingStarters > 0) {
+    console.log(`ℹ️  Già presenti ${existingStarters} tesori starter per ${city}`);
+    const starters = await Treasure.findAll({
+        where: {
+            is_starter: true,
+            address: city
         }
+    });
+    return res.json({
+        success: true,
+        message: `Tesori starter già presenti (${existingStarters})`,
+        data: starters
+    });
+}
+
+// 🔥 SE ARRIVA QUI, NON CI SONO STARTER → GENERALI
+console.log(`🆕 Nessun tesoro starter per ${city}, generazione in corso...`);
 
         // 3. Ottieni i luoghi iconici da OpenStreetMap
         const landmarks = await getCityLandmarks(latNum, lngNum);
