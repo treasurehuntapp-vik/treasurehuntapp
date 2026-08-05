@@ -62,6 +62,20 @@ router.get('/nearby', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
+// TEST INVIO EMAIL (temporaneo, da rimuovere dopo il test)
+// ============================================================
+router.get('/test-email', authMiddleware, async (req, res) => {
+    try {
+        const { sendDailyReportEmail } = await import('../utils/emailReports.js');
+        await sendDailyReportEmail();
+        res.json({ success: true, message: 'Test email eseguito, controlla i log e la casella email' });
+    } catch (error) {
+        console.error('❌ Errore test email:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// ============================================================
 // LISTA TESORI SEGNALATI (per moderazione)
 // ============================================================
 router.get('/reported/list', authMiddleware, async (req, res) => {
