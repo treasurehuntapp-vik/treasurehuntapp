@@ -62,20 +62,6 @@ router.get('/nearby', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// TEST INVIO EMAIL (temporaneo, da rimuovere dopo il test)
-// ============================================================
-router.get('/test-email', authMiddleware, async (req, res) => {
-    try {
-        const { sendDailyReportEmail } = await import('../utils/emailReports.js');
-        await sendDailyReportEmail();
-        res.json({ success: true, message: 'Test email eseguito, controlla i log e la casella email' });
-    } catch (error) {
-        console.error('❌ Errore test email:', error);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-// ============================================================
 // LISTA TESORI SEGNALATI (per moderazione)
 // ============================================================
 router.get('/reported/list', authMiddleware, async (req, res) => {
@@ -137,7 +123,7 @@ router.post('/', authMiddleware, async (req, res) => {
         console.log('========================================');
         console.log('📦 RICEVUTA RICHIESTA CREAZIONE TESORO');
         console.log('========================================');
-        
+       
         const user = req.user;
         console.log('👤 Utente email:', user ? user.email : 'NON AUTENTICATO');
         console.log('📊 trust_level:', user ? user.trust_level : 'N/A');
@@ -263,7 +249,7 @@ router.post('/:id/find', authMiddleware, async (req, res) => {
   treasure.status = 'found';
         treasure.found_at = new Date();
         treasure.found_by = req.user.id;
-        treasure.find_count = treasure.find_count + 1; 
+        treasure.find_count = treasure.find_count + 1;
 
         const karmaEarned = treasure.karma_value || 10;
         await treasure.save();
@@ -346,36 +332,32 @@ router.get('/starter/generate', authMiddleware, async (req, res) => {
         const city = await getCityFromCoordinates(latNum, lngNum);
         console.log(`📍 Generazione tesori starter per: ${city}`);
 
-    // 2. Controlla se esistono già tesori starter per questa città
-const existingStarters = await Treasure.count({
-    where: {
-        is_starter: true,
-        address: city
-    }
-});
+        // 2. Controlla se esistono già tesori starter per questa città
+        const existingStarters = await Treasure.count({
+            where: {
+                is_starter: true,
+                address: city
+            }
+        });
 
-// 🔥 FORZA LA GENERAZIONE SE non ci sono starter
-if (existingStarters > 0) {
-    console.log(`ℹ️  Già presenti ${existingStarters} tesori starter per ${city}`);
-    const starters = await Treasure.findAll({
-        where: {
-            is_starter: true,
-            address: city
+        if (existingStarters > 0) {
+            console.log(`ℹ️  Già presenti ${existingStarters} tesori starter per ${city}`);
+            const starters = await Treasure.findAll({
+                where: {
+                    is_starter: true,
+                    address: city
+                }
+            });
+            return res.json({
+                success: true,
+                message: `Tesori starter già presenti (${existingStarters})`,
+                data: starters
+            });
         }
-    });
-    return res.json({
-        success: true,
-        message: `Tesori starter già presenti (${existingStarters})`,
-        data: starters
-    });
-}
-
-// 🔥 SE ARRIVA QUI, NON CI SONO STARTER → GENERALI
-console.log(`🆕 Nessun tesoro starter per ${city}, generazione in corso...`);
 
         // 3. Ottieni i luoghi iconici da OpenStreetMap
         const landmarks = await getCityLandmarks(latNum, lngNum);
-        
+       
         if (landmarks.length === 0) {
             return res.status(404).json({
                 success: false,
@@ -393,13 +375,13 @@ console.log(`🆕 Nessun tesoro starter per ${city}, generazione in corso...`);
         for (const landmark of selectedLandmarks) {
             // 🔥 FIX: Migliora il nome del landmark se è un placeholder
             let landmarkName = landmark.name || '';
-            
+           
             // Se il nome è un placeholder o vuoto, generane uno migliore
-            if (!landmarkName || 
-                landmarkName.includes('Punto di Interesse') || 
+            if (!landmarkName ||
+                landmarkName.includes('Punto di Interesse') ||
                 landmarkName === 'default' ||
                 landmarkName.length < 3) {
-                
+               
                 const typeNames = {
                     'castle': 'Castello Antico',
                     'park': 'Parco della Città',
@@ -408,18 +390,18 @@ console.log(`🆕 Nessun tesoro starter per ${city}, generazione in corso...`);
                     'place_of_worship': 'Chiesa Storica',
                     'default': 'Tesoro Nascosto'
                 };
-                
+               
                 const typeName = typeNames[landmark.type] || 'Tesoro Nascosto';
                 const cityName = city || 'della tua città';
                 landmarkName = `${typeName} di ${cityName}`;
-                
+               
                 // Aggiungi un numero per differenziare
                 const index = selectedLandmarks.indexOf(landmark) + 1;
                 if (selectedLandmarks.length > 1) {
                     landmarkName = `${landmarkName} (${index})`;
                 }
             }
-            
+           
             // Usa il nome migliorato
             const improvedLandmark = {
                 ...landmark,
