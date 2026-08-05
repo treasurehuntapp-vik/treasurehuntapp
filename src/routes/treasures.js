@@ -61,26 +61,6 @@ router.get('/nearby', authMiddleware, async (req, res) => {
     }
 });
 
-// ============================================================
-// RESET TESORI SEGNALATI (temporaneo, solo per test)
-// ============================================================
-router.get('/reported/reset', authMiddleware, async (req, res) => {
-    try {
-        const [count] = await Treasure.update(
-            { status: 'active', report_count: 0 },
-            { where: { status: 'reported' } }
-        );
-
-        res.json({
-            success: true,
-            message: `${count} tesori ripristinati come attivi`
-        });
-
-    } catch (error) {
-        console.error('❌ Errore reset segnalati:', error);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
 
 // ============================================================
 // LISTA TESORI SEGNALATI (per moderazione)
@@ -106,6 +86,41 @@ router.get('/reported/list', authMiddleware, async (req, res) => {
             success: false,
             message: 'Errore nel recupero dei tesori segnalati'
         });
+    }
+});
+
+// ============================================================
+// RESET TESORI SEGNALATI (temporaneo, solo per test)
+// ============================================================
+router.get('/reported/reset', authMiddleware, async (req, res) => {
+    try {
+        const [count] = await Treasure.update(
+            { status: 'active', report_count: 0 },
+            { where: { status: 'reported' } }
+        );
+
+        res.json({
+            success: true,
+            message: `${count} tesori ripristinati come attivi`
+        });
+
+    } catch (error) {
+        console.error('❌ Errore reset segnalati:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// ============================================================
+// TEST INVIO EMAIL (temporaneo, da rimuovere dopo il test)
+// ============================================================
+router.get('/test-email', authMiddleware, async (req, res) => {
+    try {
+        const { sendDailyReportEmail } = await import('../utils/emailReports.js');
+        await sendDailyReportEmail();
+        res.json({ success: true, message: 'Test email eseguito, controlla i log e la casella email' });
+    } catch (error) {
+        console.error('❌ Errore test email:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 
