@@ -1,7 +1,6 @@
 import { Resend } from 'resend';
 import { Treasure } from '../models/Treasure.js';
 
-// Inizializza Resend con la tua API key
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendDailyReportEmail() {
@@ -41,25 +40,21 @@ export async function sendDailyReportEmail() {
                 </thead>
                 <tbody>${rows}</tbody>
             </table>
-            <p style="margin-top:20px;font-size:12px;color:#666;">
-                Questo report è stato inviato automaticamente da Caccia al Tesoro.
-            </p>
         `;
 
-        // 🔥 INVIO EMAIL CON RESEND
         const { data, error } = await resend.emails.send({
-            from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-            to: process.env.REPORT_RECIPIENT_EMAIL || process.env.GMAIL_USER,
+            from: 'Caccia al Tesoro <onboarding@resend.dev>',
+            to: process.env.REPORT_EMAIL_TO,
             subject: `🚨 ${reportedTreasures.length} tesori segnalati da verificare`,
             html
         });
 
         if (error) {
-            console.error('❌ Errore Resend:', error);
+            console.error('❌ Errore invio email report:', error);
             return;
         }
 
-        console.log(`📧 Email inviata con ${reportedTreasures.length} tesori segnalati (ID: ${data?.id})`);
+        console.log(`📧 Email inviata con ${reportedTreasures.length} tesori segnalati (id: ${data.id})`);
 
     } catch (error) {
         console.error('❌ Errore invio email report:', error);
