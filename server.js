@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { sequelize } from './src/config/database.js';
+import cron from 'node-cron';
+import { sendDailyReportEmail } from './src/utils/emailReports.js';
 
 // Import routes
 import authRoutes from './src/routes/auth.js';
@@ -105,6 +107,14 @@ app.use((err, req, res, next) => {
         success: false,
         message: err.message || 'Errore interno del server'
     });
+});
+
+// ============================================================
+// SCHEDULER - REPORT GIORNALIERO EMAIL (ogni giorno alle 08:00)
+// ============================================================
+cron.schedule('0 8 * * *', () => {
+    console.log('⏰ Esecuzione controllo tesori segnalati...');
+    sendDailyReportEmail();
 });
 
 // ============================================================
