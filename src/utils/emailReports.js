@@ -1,13 +1,8 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { Treasure } from '../models/Treasure.js';
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-    }
-});
+// Inizializza Resend con la tua API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendDailyReportEmail() {
     try {
@@ -46,16 +41,25 @@ export async function sendDailyReportEmail() {
                 </thead>
                 <tbody>${rows}</tbody>
             </table>
+            <p style="margin-top:20px;font-size:12px;color:#666;">
+                Questo report è stato inviato automaticamente da Caccia al Tesoro.
+            </p>
         `;
 
-        await transporter.sendMail({
-            from: `"Caccia al Tesoro" <${process.env.GMAIL_USER}>`,
-            to: process.env.GMAIL_USER,
+        // 🔥 INVIO EMAIL CON RESEND
+        const { data, error } = await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+            to: process.env.REPORT_RECIPIENT_EMAIL || process.env.GMAIL_USER,
             subject: `🚨 ${reportedTreasures.length} tesori segnalati da verificare`,
             html
         });
 
-        console.log(`📧 Email inviata con ${reportedTreasures.length} tesori segnalati`);
+        if (error) {
+            console.error('❌ Errore Resend:', error);
+            return;
+        }
+
+        console.log(`📧 Email inviata con ${reportedTreasures.length} tesori segnalati (ID: ${data?.id})`);
 
     } catch (error) {
         console.error('❌ Errore invio email report:', error);
