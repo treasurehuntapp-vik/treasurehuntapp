@@ -2,7 +2,8 @@ import nodemailer from 'nodemailer';
 import { Treasure } from '../models/Treasure.js';
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+secure: false
     auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD
