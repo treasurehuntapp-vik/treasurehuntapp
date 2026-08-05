@@ -62,6 +62,27 @@ router.get('/nearby', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
+// RESET TESORI SEGNALATI (temporaneo, solo per test)
+// ============================================================
+router.get('/reported/reset', authMiddleware, async (req, res) => {
+    try {
+        const [count] = await Treasure.update(
+            { status: 'active', report_count: 0 },
+            { where: { status: 'reported' } }
+        );
+
+        res.json({
+            success: true,
+            message: `${count} tesori ripristinati come attivi`
+        });
+
+    } catch (error) {
+        console.error('❌ Errore reset segnalati:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// ============================================================
 // LISTA TESORI SEGNALATI (per moderazione)
 // ============================================================
 router.get('/reported/list', authMiddleware, async (req, res) => {
